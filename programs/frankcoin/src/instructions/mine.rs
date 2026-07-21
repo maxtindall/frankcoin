@@ -151,7 +151,7 @@ mod reward_tests {
     use super::*;
 
     #[test]
-    fn genesis_reward_is_50_frank() {
+    fn genesis_reward_is_500_frank() {
         assert_eq!(reward_for(0), INITIAL_REWARD);
         assert_eq!(reward_for(MAX_SUPPLY / 2 - 1), INITIAL_REWARD);
     }
