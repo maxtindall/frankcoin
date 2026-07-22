@@ -4,7 +4,7 @@ A proof-of-work currency on Solana, denominated in **FRANKS**. Live on devnet;
 mined, never sold.
 
     program   CosvVR3aNvHcFPtyzZuD385kvBo2aVa3jZapttst1aqY   (devnet)
-    site      https://frankcoin.website
+    site      https://0state.website
 
 ## What it is
 
@@ -32,7 +32,7 @@ challenge an old nonce is simply a bad guess.
       tests/test_mine.rs      litesvm — grind a real proof, mine, assert the rules
       tests/test_js_parity.rs Rust and JavaScript must agree on the hash
     miner/                    reference CPU miner (Node) and the devnet launch script
-    site/                     frankcoin.website — the browser miner
+    site/                     0state.website — the browser miner
       src/miner.mjs           the whole client: grind, read state, register, mine
       index.html              the page
       frankcoin.js            built bundle (committed, so the site is static)
