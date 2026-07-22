@@ -3,270 +3,278 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>frankcoin — a currency you have to find</title>
-<meta name="description" content="A proof-of-work currency on Solana. One billion franks, all of them mined from zero, in your own browser. No pre-mine, no sale, no allocation.">
+<title>frankcoin</title>
+<meta name="description" content="frankcoin — a currency you have to find. One billion franks, none sold, none reserved, every one of them found on somebody's own machine. An art project.">
 <style>
   :root{
-    --ground:#0B0B0C; --surface:#131316; --raised:#1A1A1E;
-    --ink:#E9E7E1; --muted:#8B8880; --faint:#3A3A3E;
-    --brass:#C8912F; --brass-dim:#6E5320;
-    --live:#7FBF8F; --dead:#9C5C4E;
-    --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;
-    --sans:"Helvetica Neue",Helvetica,Arial,-apple-system,BlinkMacSystemFont,sans-serif;
-    --serif:Georgia,Charter,"Times New Roman",serif;
+    --black:#000;
+    --green:#35ff6a;        /* phosphor */
+    --green-2:#2ad257;
+    --dim:#199c3f;
+    --faint:#0d5222;
+    --red:#ff4444;
   }
-  @media (prefers-color-scheme:light){:root{
-    --ground:#F2F0EA; --surface:#FFFFFF; --raised:#E9E6DE;
-    --ink:#16161A; --muted:#6A675F; --faint:#C8C4B9;
-    --brass:#8A6216; --brass-dim:#C7B084;
-    --live:#2F6B42; --dead:#8C3B2C;}}
-  :root[data-theme="light"]{
-    --ground:#F2F0EA; --surface:#FFFFFF; --raised:#E9E6DE;
-    --ink:#16161A; --muted:#6A675F; --faint:#C8C4B9;
-    --brass:#8A6216; --brass-dim:#C7B084;
-    --live:#2F6B42; --dead:#8C3B2C;}
-  :root[data-theme="dark"]{
-    --ground:#0B0B0C; --surface:#131316; --raised:#1A1A1E;
-    --ink:#E9E7E1; --muted:#8B8880; --faint:#3A3A3E;
-    --brass:#C8912F; --brass-dim:#6E5320;
-    --live:#7FBF8F; --dead:#9C5C4E;}
-
-  *,*::before,*::after{box-sizing:border-box}
+  *{box-sizing:border-box;margin:0;padding:0;
+    font-family:"Courier New",ui-monospace,SFMono-Regular,Menlo,monospace}
   html{-webkit-text-size-adjust:100%}
-  body{margin:0;background:var(--ground);color:var(--ink);
-       font-family:var(--serif);font-size:17px;line-height:1.6;
-       -webkit-font-smoothing:antialiased}
-  .wrap{max-width:1000px;margin:0 auto;padding:0 1.25rem 6rem}
-  .col{max-width:62ch}
-  a{color:var(--brass)}
-  :focus-visible{outline:2px solid var(--brass);outline-offset:3px}
+  body{background:var(--black);color:var(--green);line-height:1.55;
+       padding:0 18px 90px;overflow-x:hidden}
 
-  /* ---- masthead ---- */
-  .top{display:flex;justify-content:space-between;align-items:baseline;
-       gap:1rem;padding:1.5rem 0 3.5rem;font-family:var(--mono);
-       font-size:.7rem;letter-spacing:.22em;text-transform:uppercase;color:var(--muted)}
-  h1{font-family:var(--sans);font-weight:700;letter-spacing:-.045em;
-     font-size:clamp(3rem,13vw,8rem);line-height:.86;margin:0}
-  .lede{font-size:clamp(1.1rem,2.4vw,1.45rem);color:var(--muted);
-        max-width:34ch;margin:1.5rem 0 0;text-wrap:balance}
+  /* --- the tube -------------------------------------------------------
+     Scanlines and vignette, fixed over everything. Atmosphere only, so they
+     never take a pointer event, and the scanlines lift for readers who ask
+     for reduced motion. */
+  body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:9;
+    background:repeating-linear-gradient(180deg,
+      rgba(0,0,0,0) 0px, rgba(0,0,0,0) 2px,
+      rgba(0,0,0,.20) 3px, rgba(0,0,0,.20) 4px)}
+  body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:8;
+    background:radial-gradient(ellipse at center,
+      rgba(0,0,0,0) 52%, rgba(0,0,0,.55) 100%)}
 
-  /* ---- the assay window: the work itself, as it happens ---- */
-  .assay{margin:3rem 0 0;border:1px solid var(--faint);background:var(--surface);
-         border-radius:2px;overflow:hidden}
-  .assay-head{display:flex;flex-wrap:wrap;gap:.4rem 1.5rem;justify-content:space-between;
-              padding:.7rem 1.1rem;border-bottom:1px solid var(--faint);
-              font-family:var(--mono);font-size:.68rem;letter-spacing:.16em;
-              text-transform:uppercase;color:var(--muted)}
-  .dot{display:inline-block;width:7px;height:7px;border-radius:50%;
-       background:var(--faint);margin-right:.5em;vertical-align:middle}
-  .dot.on{background:var(--live)}
-  .dot.busy{background:var(--brass);animation:pulse 1s ease-in-out infinite}
-  @keyframes pulse{50%{opacity:.25}}
-  @media (prefers-reduced-motion:reduce){.dot.busy{animation:none}}
+  .page{width:100%;max-width:760px;margin:0 auto;padding-top:15vh;
+        position:relative;z-index:1}
 
-  .tape{padding:1.1rem;font-family:var(--mono);font-size:clamp(.6rem,2.1vw,.86rem);
-        line-height:1.85;color:var(--muted);overflow-x:auto;white-space:nowrap;
-        min-height:8.5rem}
-  .tape div{letter-spacing:.02em}
-  .tape .z{color:var(--brass);font-weight:700}
-  .tape .hit{color:var(--ink)}
-  .tape .hit .z{text-shadow:0 0 12px var(--brass-dim)}
-  .tape .idle{color:var(--faint);white-space:normal;font-family:var(--serif);
-              font-size:.95rem;letter-spacing:0;line-height:1.6}
+  /* --- masthead ------------------------------------------------------ */
+  .brand{font-size:clamp(34px,11vw,54px);font-weight:bold;letter-spacing:1px;
+    color:var(--green);text-shadow:0 0 12px rgba(53,255,106,.45);
+    margin-bottom:6px;min-height:1.1em}
+  .tag{color:var(--green-2);font-size:13px;letter-spacing:1px;min-height:20px}
 
-  .get{display:flex;flex-wrap:wrap;align-items:center;gap:.9rem 1.2rem;margin-top:1.4rem}
-  .dl{display:inline-block;font-family:var(--mono);font-size:.8rem;letter-spacing:.1em;
-      text-transform:uppercase;text-decoration:none;color:var(--ground);
-      background:var(--brass);padding:.75rem 1.4rem;border-radius:2px;
-      transition:opacity .15s}
-  .dl:hover{opacity:.85}
-  .req{font-family:var(--mono);font-size:.7rem;color:var(--muted)}
+  .cursor{display:inline-block;width:8px;height:1em;background:var(--green);
+    vertical-align:-2px;margin-left:2px;animation:blink .9s steps(1) infinite}
+  @keyframes blink{0%,49%{opacity:1}50%,100%{opacity:0}}
 
-  /* ---- readouts ---- */
-  .figs{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
-        gap:1px;background:var(--faint);border-top:1px solid var(--faint)}
-  .fig{background:var(--surface);padding:.85rem 1.1rem}
-  .fig dt{font-family:var(--mono);font-size:.62rem;letter-spacing:.15em;
-          text-transform:uppercase;color:var(--muted);margin:0 0 .15rem}
-  .fig dd{margin:0;font-family:var(--mono);font-size:1.02rem;
-          font-variant-numeric:tabular-nums;letter-spacing:-.01em}
-  .fig dd.small{font-size:.72rem;word-break:break-all;color:var(--muted)}
+  /* --- typed blocks -------------------------------------------------- */
+  section{margin-top:60px}
+  .q{color:var(--dim);font-size:12px;letter-spacing:2px;text-transform:uppercase;
+     margin-bottom:14px;min-height:1em}
+  .q::before{content:"> ";color:var(--faint)}
 
-  /* ---- controls ---- */
-  .rig{display:flex;flex-wrap:wrap;gap:.6rem;padding:1.1rem;
-       border-top:1px solid var(--faint);background:var(--raised);align-items:center}
-  button{font:inherit;font-family:var(--mono);font-size:.76rem;letter-spacing:.1em;
-         text-transform:uppercase;background:transparent;color:var(--ink);
-         border:1px solid var(--muted);border-radius:2px;padding:.6rem 1.1rem;
-         cursor:pointer;transition:border-color .15s,color .15s,background .15s}
-  button:hover:not(:disabled){border-color:var(--brass);color:var(--brass)}
-  button:disabled{opacity:.35;cursor:not-allowed}
-  button.primary{border-color:var(--brass);color:var(--brass)}
-  button.primary:hover:not(:disabled){background:var(--brass);color:var(--ground)}
-  button.running{border-color:var(--live);color:var(--live)}
-  .who{font-family:var(--mono);font-size:.72rem;color:var(--muted);margin-left:auto}
+  p{font-size:14px;letter-spacing:.4px;margin-bottom:16px;max-width:62ch;
+    min-height:1em}
+  p:last-child{margin-bottom:0}
+  .aside{color:var(--dim);font-size:12.5px}
 
-  .log{padding:.9rem 1.1rem;border-top:1px solid var(--faint);
-       font-family:var(--mono);font-size:.72rem;line-height:1.75;color:var(--muted);
-       max-height:11rem;overflow-y:auto}
-  .log b{color:var(--ink);font-weight:400}
-  .log .bad{color:var(--dead)}
-  .log .good{color:var(--live)}
+  /* --- the chain's own report ---------------------------------------- */
+  .report{border:1px solid rgba(53,255,106,.22);padding:16px 18px;
+    max-width:62ch;background:rgba(53,255,106,.02)}
+  .line{display:flex;gap:14px;padding:3px 0;align-items:baseline;
+    font-size:13px;letter-spacing:.5px}
+  .line dt{color:var(--dim);white-space:nowrap;min-width:15ch}
+  .line dd{color:var(--green);font-variant-numeric:tabular-nums;
+    text-shadow:0 0 8px rgba(53,255,106,.28)}
+  .line dd.small{font-size:11px;color:var(--green-2);word-break:break-all;
+    text-shadow:none}
+  @media(max-width:520px){
+    .line{flex-direction:column;gap:0}
+    .line dt{min-width:0}
+  }
 
-  /* ---- prose ---- */
-  section{margin-top:4.5rem}
-  h2{font-family:var(--sans);font-weight:700;letter-spacing:-.03em;
-     font-size:clamp(1.5rem,4vw,2.1rem);line-height:1.1;margin:0 0 1rem}
-  p{margin:0 0 1rem}
-  .terms{display:grid;gap:1px;background:var(--faint);border:1px solid var(--faint);
-         border-radius:2px;margin-top:1.75rem}
-  .term{background:var(--surface);padding:1.1rem 1.25rem;display:grid;
-        grid-template-columns:11rem 1fr;gap:1.25rem;align-items:baseline}
-  @media(max-width:620px){.term{grid-template-columns:1fr;gap:.2rem}}
-  .term dt{font-family:var(--mono);font-size:.66rem;letter-spacing:.15em;
-           text-transform:uppercase;color:var(--brass)}
-  .term dd{margin:0;font-size:.98rem}
-  .warn{margin-top:1.75rem;border:1px solid var(--faint);border-left:3px solid var(--dead);
-        background:var(--surface);padding:1.1rem 1.25rem;font-size:.95rem}
-  .warn strong{color:var(--dead);font-weight:400;font-family:var(--mono);
-               font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;
-               display:block;margin-bottom:.45rem}
-  code{font-family:var(--mono);font-size:.85em;color:var(--brass);word-break:break-all}
-  footer{margin-top:5rem;padding-top:1.25rem;border-top:1px solid var(--faint);
-         font-family:var(--mono);font-size:.68rem;line-height:1.9;color:var(--muted)}
+  /* --- the way in ----------------------------------------------------- */
+  .cmd{display:block;border:1px solid rgba(53,255,106,.35);padding:14px 16px;
+    color:var(--green);font-size:13.5px;letter-spacing:.5px;max-width:62ch;
+    background:rgba(53,255,106,.04);cursor:pointer;text-align:left;width:100%;
+    transition:border-color .15s,box-shadow .15s}
+  .cmd:hover,.cmd:focus-visible{border-color:var(--green);
+    box-shadow:0 0 14px rgba(53,255,106,.25);outline:none}
+  .cmd .sig{color:var(--faint)}
+  .copied{color:var(--green-2);font-size:11.5px;letter-spacing:1px;
+    margin-top:8px;min-height:1.2em}
+  .alt{margin-top:14px;font-size:12.5px;color:var(--dim);letter-spacing:.5px;
+    max-width:62ch;line-height:1.75}
+  .alt a{color:var(--green);text-decoration:none;
+    border-bottom:1px solid rgba(53,255,106,.35)}
+  .alt a:hover,.alt a:focus-visible{color:#c6ffd8;border-bottom-color:#c6ffd8}
+
+  /* --- the notice ------------------------------------------------------ */
+  .disc{color:var(--red);font-size:11.5px;letter-spacing:.6px;line-height:1.65;
+    max-width:52ch;margin-top:60px;text-shadow:0 0 10px rgba(255,68,68,.35)}
+
+  footer{margin-top:52px;color:var(--faint);font-size:11px;letter-spacing:1px;
+    line-height:1.9;word-break:break-all}
+
+  @media (prefers-reduced-motion:reduce){
+    .cursor{animation:none}
+    body::before{display:none}
+  }
 </style>
 </head>
 <body>
-<div class="wrap">
+<div class="page">
 
-  <div class="top">
-    <span>frankcoin</span>
-    <span>solana &middot; devnet</span>
-  </div>
-
-  <header>
-    <h1>A currency<br>you have to find.</h1>
-    <p class="lede">
-      One billion franks, mined from zero on the miner's own Mac. None sold,
-      none reserved, none pre-mined. There is one way to get them, and it runs
-      on your desk.
-    </p>
-  </header>
-
-  <!-- The work, as it happens. Not a decoration: these are real digests. -->
-  <div class="assay">
-    <div class="assay-head">
-      <span><span class="dot" id="dot"></span><span id="status">reading the chain</span></span>
-      <span id="cluster">devnet</span>
-    </div>
-
-    <div class="tape" id="tape">
-      <div class="idle">Mining happens in a Mac application, on your own
-      machine, tied to your own wallet. Your Mac searches for a number that,
-      hashed with your wallet address and a challenge only you hold, produces a
-      digest beginning with enough zeros. There is no shortcut &mdash; the only
-      method is to look. The app signs each proof locally; no key ever leaves
-      your machine, and this page holds nothing.</div>
-      <div class="get">
-        <a class="dl" href="https://github.com/maxtindall/frankcoin/releases">Download for Mac</a>
-        <span class="req">macOS 13 or later &middot; Apple silicon or Intel &middot; free</span>
-      </div>
-    </div>
-
-    <dl class="figs">
-      <div class="fig"><dt>mined so far</dt><dd id="fMinted">&mdash;</dd></div>
-      <div class="fig"><dt>of a cap of</dt><dd id="fCap">1,000,000,000</dd></div>
-      <div class="fig"><dt>proofs accepted</dt><dd id="fProofs">&mdash;</dd></div>
-      <div class="fig"><dt>next reward</dt><dd id="fReward">&mdash;</dd></div>
-      <div class="fig"><dt>difficulty</dt><dd id="fDiff">&mdash;</dd></div>
-      <div class="fig"><dt>token</dt><dd class="small" id="fMint">&mdash;</dd></div>
-    </dl>
-
-    <div class="rig">
-      <button id="refresh">Refresh</button>
-      <span class="who" id="who">this page reads the chain &mdash; it cannot mine</span>
-    </div>
-
-  </div>
+  <!-- The real text lives in the DOM and the script retypes it, so nothing is
+       lost if the script never runs. -->
+  <h1 class="brand" data-type>frankcoin</h1>
+  <div class="tag" data-type>a currency you have to find</div>
 
   <section>
-    <div class="col">
-      <h2>How it works</h2>
-      <p>
-        The program on Solana holds its own mint authority. No person, wallet or
-        company can issue a frank by signing for it &mdash; the only way a frank
-        comes into existence is that someone submitted work the program checked
-        and accepted.
-      </p>
-      <p>
-        Mining runs in a Mac application on the miner’s own machine, tied to
-        their own wallet. Each miner carries a challenge of their own. Finding a nonce that hashes
-        with it to a digest of sufficiently many leading zeros earns the reward,
-        and the challenge immediately rolls forward. The proof you just spent is
-        worthless a second later, and there is no list of used proofs to maintain
-        &mdash; against a new challenge, an old nonce is simply a bad guess.
-      </p>
-    </div>
+    <div class="q" data-type>what it is</div>
+    <p data-type>One billion franks. None sold, none reserved, none held back for anyone. Every frank that will ever exist has to be found first.</p>
+    <p data-type>The program holds its own mint authority. No person — including whoever wrote it — can bring a frank into being by signing for it. The only thing it accepts is work.</p>
+    <p class="aside" data-type>There is nothing here to buy. It is an argument about where money comes from, made in the one language a machine takes seriously.</p>
+  </section>
 
-    <dl class="terms">
-      <div class="term"><dt>Supply</dt><dd>1,000,000,000 franks, nine decimals. The cap is enforced on-chain and cannot be exceeded by anyone, including its author.</dd></div>
-      <div class="term"><dt>Issuance</dt><dd>Mined from zero. No pre-mine, no founder allocation, no admin mint instruction anywhere in the program.</dd></div>
-      <div class="term"><dt>Reward</dt><dd>500 franks per accepted proof at genesis, halving with each tranche of supply &mdash; 500M, then 250M, then 125M, and so on.</dd></div>
-      <div class="term"><dt>Proof</dt><dd><code>keccak(challenge &#8214; miner &#8214; nonce)</code> must carry at least <em>difficulty</em> leading zero bits.</dd></div>
-      <div class="term"><dt>Custody</dt><dd>The Mac app holds your keypair locally and signs every proof on your machine. This site holds nothing, takes no cut, and cannot mine — it only reports what the chain says.</dd></div>
-      <div class="term"><dt>Source</dt><dd>The program, its tests and the Mac miner are public. The app is the only miner that exists — unless somebody builds another, which the protocol permits and nothing prevents.</dd></div>
+  <section>
+    <div class="q" data-type>the chain reports</div>
+    <dl class="report">
+      <div class="line"><dt>mined so far</dt><dd id="fMinted">&mdash;</dd></div>
+      <div class="line"><dt>of a cap of</dt><dd id="fCap">1,000,000,000</dd></div>
+      <div class="line"><dt>proofs accepted</dt><dd id="fProofs">&mdash;</dd></div>
+      <div class="line"><dt>reward now</dt><dd id="fReward">&mdash;</dd></div>
+      <div class="line"><dt>difficulty</dt><dd id="fDiff">&mdash;</dd></div>
+      <div class="line"><dt>one claim per</dt><dd id="fCool">&mdash;</dd></div>
+      <div class="line"><dt>token</dt><dd class="small" id="fMint">&mdash;</dd></div>
     </dl>
+  </section>
 
-    <div class="warn">
-      <strong>Read this before you mine</strong>
-      frankcoin runs on <em>devnet</em>, Solana's test network. These franks are
-      test tokens: they cannot be sold, are worth nothing, and will be worth
-      nothing. There is no offer, no sale and no investment here, and nothing on
-      this page is financial advice. It is an artwork about issuing money, and it
-      is deliberately given away rather than sold. Should it ever reach the main
-      network, that will follow an external audit, and it will still be given away.
+  <section>
+    <div class="q" data-type>how it is found</div>
+    <p data-type>Your machine looks for a number. Hashed together with your wallet and a challenge only you hold, it has to come out beginning with enough zeros. There is no shortcut and no cleverness available. The only method is to keep looking.</p>
+    <p data-type>When your machine finds one, the program checks the work, issues the reward, and rolls your challenge forward. The proof you just spent is worthless a second later.</p>
+    <p class="aside" data-type>Speed stops mattering quickly. A wallet may claim once per cooldown however fast it searched, so a laptop finds as much as a room full of hardware. That is deliberate.</p>
+  </section>
+
+  <section>
+    <div class="q" data-type>to look for some</div>
+    <button class="cmd" id="cmd" type="button" title="click to copy"><span class="sig">$ </span>brew install maxtindall/frankcoin/frankcoin</button>
+    <div class="copied" id="copied"></div>
+    <div class="alt">
+      Homebrew builds it from source on your own machine, so there is no binary to trust.
+      There is also a <a href="https://github.com/maxtindall/frankcoin/releases">Mac app</a>,
+      and the <a href="https://github.com/maxtindall/frankcoin">whole thing is readable</a>.
     </div>
   </section>
 
+  <div class="disc" data-type>frankcoin runs on a test network. These franks cannot be sold and are worth nothing. There is no offer, no sale and no advice here. It is an artwork about issuing money, and it is given away rather than sold.</div>
+
   <footer>
-    frankcoin &middot; denominated in franks &middot; program <code id="fProgram">&mdash;</code><br>
-    a Max Tindall Inc art project &middot; no offer, no advice, no sale
+    max tindall inc &middot; mined, never sold<br>
+    <span id="fProgram">&mdash;</span>
   </footer>
 </div>
 
 <script src="./frankcoin.js"></script>
 <script>
 (function () {
-  var F = window.Frankcoin;
-  var RPC = 'https://api.devnet.solana.com';
-  var $ = function (id) { return document.getElementById(id); };
-  var fmt = function (n) { return Number(n).toLocaleString('en-US'); };
-  function set(id, v) { var e = $(id); if (e) e.textContent = v; }
+  var reduce = window.matchMedia
+    && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  async function refresh() {
-    var st;
-    try {
-      st = await F.state({ rpcUrl: RPC });
-    } catch (e) {
-      set('status', 'cannot reach the network');
-      $('dot').className = 'dot';
-      return;
-    }
-    set('fProgram', F.PROGRAM_ID);
-    if (!st.deployed) { set('status', 'not deployed on this cluster'); $('dot').className = 'dot'; return; }
-    set('status', 'live');
-    $('dot').className = 'dot on';
-    set('fMinted', fmt(st.totalMinted) + ' franks');
-    set('fCap', fmt(st.cap));
-    set('fProofs', fmt(st.proofsAccepted));
-    set('fReward', fmt(st.nextReward) + ' franks');
-    set('fDiff', st.difficulty + ' bits');
-    set('fMint', st.mint);
+  function cursor() {
+    var c = document.createElement('span');
+    c.className = 'cursor';
+    return c;
   }
 
-  $('refresh').addEventListener('click', refresh);
-  refresh();
-  setInterval(refresh, 30000);
+  // Type text into an element carrying a blinking cursor along with it — the
+  // same gesture the open bot lock screen makes when it opens.
+  function typeInto(el, text, speed, done) {
+    el.textContent = '';
+    var cur = cursor();
+    el.appendChild(cur);
+    var i = 0;
+    (function tick() {
+      el.textContent = text.slice(0, i);
+      el.appendChild(cur);
+      if (i++ < text.length) setTimeout(tick, speed);
+      else { if (cur.parentNode) cur.parentNode.removeChild(cur); if (done) setTimeout(done, 120); }
+    })();
+  }
+
+  // Each block is typed as a unit, its lines in order, so the page unspools
+  // like a session rather than a dozen things chattering at once.
+  var blocks = [];
+  blocks.push([document.querySelector('.brand'), document.querySelector('.tag')]);
+  Array.prototype.forEach.call(document.querySelectorAll('section'), function (sec) {
+    var kids = sec.querySelectorAll('[data-type]');
+    if (kids.length) blocks.push(Array.prototype.slice.call(kids));
+  });
+  blocks.push([document.querySelector('.disc')]);
+
+  blocks.forEach(function (b) {
+    b.forEach(function (el) {
+      el.setAttribute('data-text', el.textContent.replace(/\s+/g, ' ').trim());
+      if (!reduce) el.textContent = '';
+    });
+  });
+
+  function speedFor(el) {
+    if (el.classList.contains('brand')) return 90;
+    if (el.classList.contains('q')) return 26;
+    return 9;
+  }
+
+  function typeBlock(block, done) {
+    (function next(i) {
+      if (i >= block.length) { if (done) done(); return; }
+      var el = block[i];
+      typeInto(el, el.getAttribute('data-text'), speedFor(el), function () { next(i + 1); });
+    })(0);
+  }
+
+  if (!reduce) {
+    // The masthead plays on load. Only once it has finished does anything
+    // below become eligible, so the opening is never talked over.
+    var armed = false, queued = [];
+    typeBlock(blocks[0], function () {
+      armed = true;
+      queued.splice(0).forEach(function (b) { typeBlock(b); });
+    });
+
+    var seen = [];
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (!e.isIntersecting || seen.indexOf(e.target) >= 0) return;
+        seen.push(e.target);
+        var block = e.target.__block;
+        if (armed) typeBlock(block); else queued.push(block);
+      });
+    }, { rootMargin: '0px 0px -10% 0px', threshold: 0.05 });
+
+    blocks.slice(1).forEach(function (b) {
+      var anchor = b[0].closest('section') || b[0];
+      anchor.__block = b;
+      io.observe(anchor);
+    });
+  }
+
+  // ---- the chain's own numbers --------------------------------------------
+  var F = window.Frankcoin;
+  function fmt(n) { return Number(n).toLocaleString('en-US'); }
+  function put(id, v) { var e = document.getElementById(id); if (e) e.textContent = v; }
+
+  function report() {
+    if (!F) { put('fMinted', 'the reader did not load'); return; }
+    F.state({ rpcUrl: 'https://api.devnet.solana.com' }).then(function (st) {
+      put('fProgram', st.programId);
+      if (!st.deployed) { put('fMinted', 'not on this network'); return; }
+      put('fMinted', fmt(st.totalMinted) + ' franks');
+      put('fCap', fmt(st.cap));
+      put('fProofs', fmt(st.proofsAccepted));
+      put('fReward', fmt(st.nextReward) + ' franks');
+      put('fDiff', st.difficulty + ' bits');
+      put('fCool', st.cooldown + ' seconds, per wallet');
+      put('fMint', st.mint);
+    })['catch'](function () {
+      put('fMinted', 'the network did not answer');
+    });
+  }
+  report();
+  setInterval(report, 30000);
+
+  // ---- the only interaction on the page -----------------------------------
+  document.getElementById('cmd').addEventListener('click', function () {
+    var text = 'brew install maxtindall/frankcoin/frankcoin';
+    var note = document.getElementById('copied');
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(text).then(function () {
+        note.textContent = 'copied.';
+        setTimeout(function () { note.textContent = ''; }, 2600);
+      })['catch'](function () { note.textContent = 'select it and copy by hand.'; });
+    } else {
+      note.textContent = 'select it and copy by hand.';
+    }
+  });
 })();
 </script>
 </body>
