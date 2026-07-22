@@ -1,0 +1,377 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>frankcoin — a currency you have to find</title>
+<meta name="description" content="A proof-of-work currency on Solana. One billion FRANKS, all of them mined from zero, in your own browser. No pre-mine, no sale, no allocation.">
+<style>
+  :root{
+    --ground:#0B0B0C; --surface:#131316; --raised:#1A1A1E;
+    --ink:#E9E7E1; --muted:#8B8880; --faint:#3A3A3E;
+    --brass:#C8912F; --brass-dim:#6E5320;
+    --live:#7FBF8F; --dead:#9C5C4E;
+    --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;
+    --sans:"Helvetica Neue",Helvetica,Arial,-apple-system,BlinkMacSystemFont,sans-serif;
+    --serif:Georgia,Charter,"Times New Roman",serif;
+  }
+  @media (prefers-color-scheme:light){:root{
+    --ground:#F2F0EA; --surface:#FFFFFF; --raised:#E9E6DE;
+    --ink:#16161A; --muted:#6A675F; --faint:#C8C4B9;
+    --brass:#8A6216; --brass-dim:#C7B084;
+    --live:#2F6B42; --dead:#8C3B2C;}}
+  :root[data-theme="light"]{
+    --ground:#F2F0EA; --surface:#FFFFFF; --raised:#E9E6DE;
+    --ink:#16161A; --muted:#6A675F; --faint:#C8C4B9;
+    --brass:#8A6216; --brass-dim:#C7B084;
+    --live:#2F6B42; --dead:#8C3B2C;}
+  :root[data-theme="dark"]{
+    --ground:#0B0B0C; --surface:#131316; --raised:#1A1A1E;
+    --ink:#E9E7E1; --muted:#8B8880; --faint:#3A3A3E;
+    --brass:#C8912F; --brass-dim:#6E5320;
+    --live:#7FBF8F; --dead:#9C5C4E;}
+
+  *,*::before,*::after{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;background:var(--ground);color:var(--ink);
+       font-family:var(--serif);font-size:17px;line-height:1.6;
+       -webkit-font-smoothing:antialiased}
+  .wrap{max-width:1000px;margin:0 auto;padding:0 1.25rem 6rem}
+  .col{max-width:62ch}
+  a{color:var(--brass)}
+  :focus-visible{outline:2px solid var(--brass);outline-offset:3px}
+
+  /* ---- masthead ---- */
+  .top{display:flex;justify-content:space-between;align-items:baseline;
+       gap:1rem;padding:1.5rem 0 3.5rem;font-family:var(--mono);
+       font-size:.7rem;letter-spacing:.22em;text-transform:uppercase;color:var(--muted)}
+  h1{font-family:var(--sans);font-weight:700;letter-spacing:-.045em;
+     font-size:clamp(3rem,13vw,8rem);line-height:.86;margin:0}
+  .lede{font-size:clamp(1.1rem,2.4vw,1.45rem);color:var(--muted);
+        max-width:34ch;margin:1.5rem 0 0;text-wrap:balance}
+
+  /* ---- the assay window: the work itself, as it happens ---- */
+  .assay{margin:3rem 0 0;border:1px solid var(--faint);background:var(--surface);
+         border-radius:2px;overflow:hidden}
+  .assay-head{display:flex;flex-wrap:wrap;gap:.4rem 1.5rem;justify-content:space-between;
+              padding:.7rem 1.1rem;border-bottom:1px solid var(--faint);
+              font-family:var(--mono);font-size:.68rem;letter-spacing:.16em;
+              text-transform:uppercase;color:var(--muted)}
+  .dot{display:inline-block;width:7px;height:7px;border-radius:50%;
+       background:var(--faint);margin-right:.5em;vertical-align:middle}
+  .dot.on{background:var(--live)}
+  .dot.busy{background:var(--brass);animation:pulse 1s ease-in-out infinite}
+  @keyframes pulse{50%{opacity:.25}}
+  @media (prefers-reduced-motion:reduce){.dot.busy{animation:none}}
+
+  .tape{padding:1.1rem;font-family:var(--mono);font-size:clamp(.6rem,2.1vw,.86rem);
+        line-height:1.85;color:var(--muted);overflow-x:auto;white-space:nowrap;
+        min-height:8.5rem}
+  .tape div{letter-spacing:.02em}
+  .tape .z{color:var(--brass);font-weight:700}
+  .tape .hit{color:var(--ink)}
+  .tape .hit .z{text-shadow:0 0 12px var(--brass-dim)}
+  .tape .idle{color:var(--faint);white-space:normal;font-family:var(--serif);
+              font-size:.95rem;letter-spacing:0;line-height:1.6}
+
+  /* ---- readouts ---- */
+  .figs{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+        gap:1px;background:var(--faint);border-top:1px solid var(--faint)}
+  .fig{background:var(--surface);padding:.85rem 1.1rem}
+  .fig dt{font-family:var(--mono);font-size:.62rem;letter-spacing:.15em;
+          text-transform:uppercase;color:var(--muted);margin:0 0 .15rem}
+  .fig dd{margin:0;font-family:var(--mono);font-size:1.02rem;
+          font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+  .fig dd.small{font-size:.72rem;word-break:break-all;color:var(--muted)}
+
+  /* ---- controls ---- */
+  .rig{display:flex;flex-wrap:wrap;gap:.6rem;padding:1.1rem;
+       border-top:1px solid var(--faint);background:var(--raised);align-items:center}
+  button{font:inherit;font-family:var(--mono);font-size:.76rem;letter-spacing:.1em;
+         text-transform:uppercase;background:transparent;color:var(--ink);
+         border:1px solid var(--muted);border-radius:2px;padding:.6rem 1.1rem;
+         cursor:pointer;transition:border-color .15s,color .15s,background .15s}
+  button:hover:not(:disabled){border-color:var(--brass);color:var(--brass)}
+  button:disabled{opacity:.35;cursor:not-allowed}
+  button.primary{border-color:var(--brass);color:var(--brass)}
+  button.primary:hover:not(:disabled){background:var(--brass);color:var(--ground)}
+  button.running{border-color:var(--live);color:var(--live)}
+  .who{font-family:var(--mono);font-size:.72rem;color:var(--muted);margin-left:auto}
+
+  .log{padding:.9rem 1.1rem;border-top:1px solid var(--faint);
+       font-family:var(--mono);font-size:.72rem;line-height:1.75;color:var(--muted);
+       max-height:11rem;overflow-y:auto}
+  .log b{color:var(--ink);font-weight:400}
+  .log .bad{color:var(--dead)}
+  .log .good{color:var(--live)}
+
+  /* ---- prose ---- */
+  section{margin-top:4.5rem}
+  h2{font-family:var(--sans);font-weight:700;letter-spacing:-.03em;
+     font-size:clamp(1.5rem,4vw,2.1rem);line-height:1.1;margin:0 0 1rem}
+  p{margin:0 0 1rem}
+  .terms{display:grid;gap:1px;background:var(--faint);border:1px solid var(--faint);
+         border-radius:2px;margin-top:1.75rem}
+  .term{background:var(--surface);padding:1.1rem 1.25rem;display:grid;
+        grid-template-columns:11rem 1fr;gap:1.25rem;align-items:baseline}
+  @media(max-width:620px){.term{grid-template-columns:1fr;gap:.2rem}}
+  .term dt{font-family:var(--mono);font-size:.66rem;letter-spacing:.15em;
+           text-transform:uppercase;color:var(--brass)}
+  .term dd{margin:0;font-size:.98rem}
+  .warn{margin-top:1.75rem;border:1px solid var(--faint);border-left:3px solid var(--dead);
+        background:var(--surface);padding:1.1rem 1.25rem;font-size:.95rem}
+  .warn strong{color:var(--dead);font-weight:400;font-family:var(--mono);
+               font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;
+               display:block;margin-bottom:.45rem}
+  code{font-family:var(--mono);font-size:.85em;color:var(--brass);word-break:break-all}
+  footer{margin-top:5rem;padding-top:1.25rem;border-top:1px solid var(--faint);
+         font-family:var(--mono);font-size:.68rem;line-height:1.9;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="top">
+    <span>frankcoin</span>
+    <span>solana &middot; devnet</span>
+  </div>
+
+  <header>
+    <h1>A currency<br>you have to find.</h1>
+    <p class="lede">
+      One billion FRANKS. Every one of them mined from zero, by somebody's own
+      machine. None sold, none reserved, none given away.
+    </p>
+  </header>
+
+  <!-- The work, as it happens. Not a decoration: these are real digests. -->
+  <div class="assay">
+    <div class="assay-head">
+      <span><span class="dot" id="dot"></span><span id="status">reading the chain</span></span>
+      <span id="cluster">devnet</span>
+    </div>
+
+    <div class="tape" id="tape">
+      <div class="idle">Every FRANK begins as a search. Your machine tries number
+      after number, hashing each one against a challenge that belongs only to you,
+      looking for a result that begins with enough zeros. There is no shortcut and
+      no way to be clever about it — the only method is to look. When you start,
+      the attempts appear here.</div>
+    </div>
+
+    <dl class="figs">
+      <div class="fig"><dt>mined so far</dt><dd id="fMinted">&mdash;</dd></div>
+      <div class="fig"><dt>of a cap of</dt><dd id="fCap">1,000,000,000</dd></div>
+      <div class="fig"><dt>proofs accepted</dt><dd id="fProofs">&mdash;</dd></div>
+      <div class="fig"><dt>next reward</dt><dd id="fReward">&mdash;</dd></div>
+      <div class="fig"><dt>difficulty</dt><dd id="fDiff">&mdash;</dd></div>
+      <div class="fig"><dt>your hash rate</dt><dd id="fRate">idle</dd></div>
+      <div class="fig"><dt>you have mined</dt><dd id="fYou">&mdash;</dd></div>
+      <div class="fig"><dt>token</dt><dd class="small" id="fMint">&mdash;</dd></div>
+    </dl>
+
+    <div class="rig">
+      <button id="connect" class="primary">Connect wallet</button>
+      <button id="register" hidden>Register once</button>
+      <button id="mine" disabled>Start mining</button>
+      <button id="refresh">Refresh</button>
+      <span class="who" id="who">no wallet connected</span>
+    </div>
+
+    <div class="log" id="log"></div>
+  </div>
+
+  <section>
+    <div class="col">
+      <h2>How it works</h2>
+      <p>
+        The program on Solana holds its own mint authority. No person, wallet or
+        company can issue a FRANK by signing for it &mdash; the only way a FRANK
+        comes into existence is that someone submitted work the program checked
+        and accepted.
+      </p>
+      <p>
+        Each miner carries a challenge of their own. Finding a nonce that hashes
+        with it to a digest of sufficiently many leading zeros earns the reward,
+        and the challenge immediately rolls forward. The proof you just spent is
+        worthless a second later, and there is no list of used proofs to maintain
+        &mdash; against a new challenge, an old nonce is simply a bad guess.
+      </p>
+    </div>
+
+    <dl class="terms">
+      <div class="term"><dt>Supply</dt><dd>1,000,000,000 FRANKS, nine decimals. The cap is enforced on-chain and cannot be exceeded by anyone, including its author.</dd></div>
+      <div class="term"><dt>Issuance</dt><dd>Mined from zero. No pre-mine, no founder allocation, no admin mint instruction anywhere in the program.</dd></div>
+      <div class="term"><dt>Reward</dt><dd>500 FRANKS per accepted proof at genesis, halving with each tranche of supply &mdash; 500M, then 250M, then 125M, and so on.</dd></div>
+      <div class="term"><dt>Proof</dt><dd><code>keccak(challenge &#8214; miner &#8214; nonce)</code> must carry at least <em>difficulty</em> leading zero bits.</dd></div>
+      <div class="term"><dt>Custody</dt><dd>This site holds no keys and takes no cut. Every transaction is signed by your own wallet, and you can mine without this page at all.</dd></div>
+      <div class="term"><dt>Source</dt><dd>The program, its tests and this miner are public. Anyone may read them, fork them, or write a faster miner.</dd></div>
+    </dl>
+
+    <div class="warn">
+      <strong>Read this before you mine</strong>
+      frankcoin runs on <em>devnet</em>, Solana's test network. These FRANKS are
+      test tokens: they cannot be sold, are worth nothing, and will be worth
+      nothing. There is no offer, no sale and no investment here, and nothing on
+      this page is financial advice. It is an artwork about issuing money, and it
+      is deliberately given away rather than sold. Should it ever reach the main
+      network, that will follow an external audit, and it will still be given away.
+    </div>
+  </section>
+
+  <footer>
+    frankcoin &middot; denominated in FRANKS &middot; program <code id="fProgram">&mdash;</code><br>
+    a Max Tindall Inc art project &middot; no offer, no advice, no sale
+  </footer>
+</div>
+
+<script src="./frankcoin.js"></script>
+<script>
+(function () {
+  var F = window.Frankcoin;
+  var RPC = 'https://api.devnet.solana.com';
+  var provider = null, walletName = '', st = null, mining = false;
+  var hashes = 0, t0 = 0, sessionFranks = 0, sessionProofs = 0;
+
+  var $ = function (id) { return document.getElementById(id); };
+  var fmt = function (n, d) { return Number(n).toLocaleString('en-US', { maximumFractionDigits: d || 0 }); };
+  function set(id, v) { $(id).textContent = v; }
+  function say(t, kind) {
+    var d = document.createElement('div');
+    if (kind) d.className = kind;
+    d.textContent = t;
+    $('log').appendChild(d);
+    $('log').scrollTop = $('log').scrollHeight;
+  }
+  function status(t, cls) { set('status', t); $('dot').className = 'dot' + (cls ? ' ' + cls : ''); }
+
+  /* The tape: a sampled digest per yield, leading zeros lit. Real output. */
+  var tapeCleared = false;
+  function tape(hex, isHit) {
+    if (!tapeCleared) { $('tape').innerHTML = ''; tapeCleared = true; }
+    var lead = 0;
+    while (lead < hex.length && hex[lead] === '0') lead++;
+    var row = document.createElement('div');
+    if (isHit) row.className = 'hit';
+    var z = document.createElement('span');
+    z.className = 'z'; z.textContent = hex.slice(0, lead);
+    row.appendChild(z);
+    row.appendChild(document.createTextNode(hex.slice(lead)));
+    if (isHit) row.appendChild(document.createTextNode('   ← found'));
+    $('tape').appendChild(row);
+    while ($('tape').childElementCount > 6) $('tape').removeChild($('tape').firstChild);
+  }
+
+  async function refresh() {
+    try {
+      st = await F.state({ rpcUrl: RPC, miner: provider && provider.publicKey ? provider.publicKey.toString() : null });
+    } catch (e) { status('cannot reach the network', ''); say('network error: ' + (e.message || e), 'bad'); return; }
+
+    set('fProgram', F.PROGRAM_ID);
+    if (!st.deployed) { status('not deployed on this cluster', ''); return; }
+
+    if (!mining) status('live', 'on');
+    set('fMinted', fmt(st.totalMinted) + ' FRANKS');
+    set('fCap', fmt(st.cap));
+    set('fProofs', fmt(st.proofsAccepted));
+    set('fReward', fmt(st.nextReward) + ' FRANKS');
+    set('fDiff', st.difficulty + ' bits');
+    set('fMint', st.mint);
+    if (st.registered) {
+      set('fYou', fmt(st.mined) + ' FRANKS');
+      $('register').hidden = true;
+      $('mine').disabled = false;
+    } else if (provider) {
+      set('fYou', 'not registered');
+      $('register').hidden = false;
+      $('mine').disabled = true;
+    }
+  }
+
+  $('connect').addEventListener('click', async function () {
+    var ws = F.wallets();
+    if (!ws.length) { say('No Solana wallet found in this browser. Install one, then reload.', 'bad'); return; }
+    var pick = ws[0];
+    try {
+      await pick.provider.connect();
+      provider = pick.provider; walletName = pick.name;
+      set('who', pick.name + ' · ' + provider.publicKey.toString().slice(0, 6) + '…');
+      say('Connected. This page never sees your key — you sign every proof yourself.', 'good');
+      await refresh();
+    } catch (e) { say('Could not connect: ' + (e.message || e), 'bad'); }
+  });
+
+  $('register').addEventListener('click', async function () {
+    this.disabled = true;
+    try {
+      say('Creating your challenge — approve in your wallet.');
+      await F.register({ provider: provider, rpcUrl: RPC });
+      say('Registered. The challenge is yours alone.', 'good');
+      await refresh();
+    } catch (e) { say('Registration failed: ' + (e.message || e), 'bad'); this.disabled = false; }
+  });
+
+  $('refresh').addEventListener('click', refresh);
+
+  function stopMining(msg, kind) {
+    mining = false;
+    $('mine').textContent = 'Start mining';
+    $('mine').classList.remove('running');
+    status('live', 'on');
+    set('fRate', 'idle');
+    if (msg) say(msg, kind);
+  }
+
+  async function loop() {
+    var minerBytes = F.pubkeyBytes(provider.publicKey.toString());
+    while (mining) {
+      if (!st || !st.registered) { stopMining('Lost your challenge — refresh and try again.', 'bad'); return; }
+      var lap = 0;
+      var found = await F.grind({
+        challenge: st.challenge,
+        miner: minerBytes,
+        difficulty: st.difficulty,
+        shouldStop: function () { return !mining; },
+        onProgress: function (p) {
+          hashes += p.hashes - lap; lap = p.hashes;
+          set('fRate', fmt(hashes / Math.max((Date.now() - t0) / 1000, 0.001)) + ' /sec');
+          tape(F.digest(st.challenge, minerBytes, p.hashes), false);
+        },
+      });
+      if (!found) { stopMining('Stopped.', null); return; }
+      hashes += found.hashes - lap;
+      tape(F.digest(st.challenge, minerBytes, found.nonce), true);
+      say('Found it after ' + fmt(found.hashes) + ' attempts in ' + found.seconds.toFixed(1) + 's. Sign to claim.');
+      status('awaiting your signature', 'busy');
+      try {
+        await F.mine({ provider: provider, rpcUrl: RPC, nonce: found.nonce });
+        sessionProofs++; sessionFranks += st.nextReward;
+        say('Minted ' + fmt(st.nextReward) + ' FRANKS. Your challenge has rolled — that proof is now worthless.', 'good');
+      } catch (e) {
+        var m = (e && e.message) ? e.message : String(e);
+        if (/reject/i.test(m)) { stopMining('You declined the signature.', null); return; }
+        if (/FullyMined/.test(m)) { stopMining('frankcoin is fully mined. There will be no more.', null); return; }
+        if (/Cooldown/.test(m)) { say('Cooldown — waiting ' + st.cooldown + 's.'); await new Promise(function (r) { setTimeout(r, (st.cooldown || 5) * 1000); }); }
+        else { stopMining('Could not submit: ' + m.slice(0, 160), 'bad'); return; }
+      }
+      status('mining', 'busy');
+      await refresh();
+    }
+  }
+
+  $('mine').addEventListener('click', function () {
+    if (mining) { stopMining(null, null); return; }
+    if (!provider || !st || !st.registered) { say('Connect and register first.', 'bad'); return; }
+    mining = true; hashes = 0; t0 = Date.now();
+    this.textContent = 'Stop';
+    this.classList.add('running');
+    status('mining', 'busy');
+    say('Searching at difficulty ' + st.difficulty + '. Your machine is doing the work.');
+    loop();
+  });
+
+  refresh();
+})();
+</script>
+</body>
+</html>

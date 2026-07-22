@@ -1,0 +1,14 @@
+{
+  "name": "frankcoin-site",
+  "private": true,
+  "type": "module",
+  "scripts": { "build": "node build.mjs" },
+  "dependencies": {
+    "@solana/web3.js": "^1.95.0",
+    "js-sha3": "^0.12.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.24.0",
+    "esbuild-plugin-polyfill-node": "^0.3.0"
+  }
+}
