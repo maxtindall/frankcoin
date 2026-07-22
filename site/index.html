@@ -66,6 +66,16 @@
     text-shadow:0 0 8px rgba(53,255,106,.28)}
   .line dd.small{font-size:11px;color:var(--green-2);word-break:break-all;
     text-shadow:none}
+  .line dd a,footer a{color:inherit;text-decoration:none;
+    border-bottom:1px dotted rgba(53,255,106,.45)}
+  .line dd a:hover,.line dd a:focus-visible,
+  footer a:hover,footer a:focus-visible{color:#c6ffd8;
+    border-bottom-style:solid;border-bottom-color:#c6ffd8}
+  .scan{display:block;margin-top:14px;font-size:12px;color:var(--dim);
+    letter-spacing:.5px}
+  .scan a{color:var(--green);text-decoration:none;
+    border-bottom:1px solid rgba(53,255,106,.35)}
+  .scan a:hover,.scan a:focus-visible{color:#c6ffd8;border-bottom-color:#c6ffd8}
   @media(max-width:520px){
     .line{flex-direction:column;gap:0}
     .line dt{min-width:0}
@@ -126,6 +136,10 @@
       <div class="line"><dt>one claim per</dt><dd id="fCool">&mdash;</dd></div>
       <div class="line"><dt>token</dt><dd class="small" id="fMint">&mdash;</dd></div>
     </dl>
+    <div class="scan">Every proof and every frank is on the public ledger &mdash;
+      <a id="scanToken" href="https://solscan.io/" target="_blank" rel="noopener">inspect the token</a>
+      or <a id="scanProgram" href="https://solscan.io/" target="_blank" rel="noopener">read the program</a>
+      on Solscan.</div>
   </section>
 
   <section>
@@ -246,7 +260,14 @@
   function report() {
     if (!F) { put('fMinted', 'the reader did not load'); return; }
     F.state({ rpcUrl: 'https://api.devnet.solana.com' }).then(function (st) {
-      put('fProgram', st.programId);
+      var pf = document.getElementById('fProgram');
+      if (pf) {
+        pf.innerHTML = '';
+        var pa = document.createElement('a');
+        pa.href = 'https://solscan.io/account/' + st.programId + '?cluster=devnet';
+        pa.target = '_blank'; pa.rel = 'noopener'; pa.textContent = st.programId;
+        pf.appendChild(pa);
+      }
       if (!st.deployed) { put('fMinted', 'not on this network'); return; }
       put('fMinted', fmt(st.totalMinted) + ' franks');
       put('fCap', fmt(st.cap));
@@ -255,6 +276,21 @@
       put('fDiff', st.difficulty + ' bits');
       put('fCool', st.cooldown + ' seconds, per wallet');
       put('fMint', st.mint);
+
+      // The addresses are the claim; let people go and check it.
+      var cluster = '?cluster=devnet';
+      var tok = document.getElementById('scanToken');
+      var prg = document.getElementById('scanProgram');
+      if (tok) tok.href = 'https://solscan.io/token/' + st.mint + cluster;
+      if (prg) prg.href = 'https://solscan.io/account/' + st.programId + cluster;
+      var mintEl = document.getElementById('fMint');
+      if (mintEl) {
+        mintEl.innerHTML = '';
+        var a = document.createElement('a');
+        a.href = 'https://solscan.io/token/' + st.mint + cluster;
+        a.target = '_blank'; a.rel = 'noopener'; a.textContent = st.mint;
+        mintEl.appendChild(a);
+      }
     })['catch'](function () {
       put('fMinted', 'the network did not answer');
     });
