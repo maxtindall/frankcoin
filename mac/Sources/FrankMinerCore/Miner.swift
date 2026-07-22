@@ -8,6 +8,7 @@ public final class Miner: @unchecked Sendable {
     private let lock = NSLock()
     private var stopped = false
     private var total: UInt64 = 0
+    private var sample: UInt64 = 0   // a nonce lane 0 actually tried, for the tape
 
     public private(set) var cores: Int
     public init(cores: Int = max(1, ProcessInfo.processInfo.activeProcessorCount - 1)) {
@@ -16,11 +17,12 @@ public final class Miner: @unchecked Sendable {
 
     public func stop() { lock.lock(); stopped = true; lock.unlock() }
     public var hashesSoFar: UInt64 { lock.lock(); defer { lock.unlock() }; return total }
+    public var sampleNonce: UInt64 { lock.lock(); defer { lock.unlock() }; return sample }
 
     /// Grind until a nonce meets `difficulty` or `stop()` is called.
     /// `progress` is called on a background queue roughly twice a second.
     public func grind(challenge: [UInt8], miner: [UInt8], difficulty: Int,
-                      progress: @escaping (UInt64, Double) -> Void) -> Found? {
+                      progress: @escaping (UInt64, Double, UInt64) -> Void) -> Found? {
         lock.lock(); stopped = false; total = 0; lock.unlock()
 
         let start = Date()
@@ -31,7 +33,7 @@ public final class Miner: @unchecked Sendable {
         var ticking = true
         ticker.async { [weak self] in
             while ticking, let self {
-                progress(self.hashesSoFar, Date().timeIntervalSince(start))
+                progress(self.hashesSoFar, Date().timeIntervalSince(start), self.sampleNonce)
                 Thread.sleep(forTimeInterval: 0.5)
             }
         }
@@ -50,6 +52,7 @@ public final class Miner: @unchecked Sendable {
                     lock.lock()
                     let quit = stopped
                     total &+= localHashes
+                    if lane == 0 { sample = nonce }
                     lock.unlock()
                     localHashes = 0
                     if quit { return }

@@ -16,7 +16,7 @@ public struct ChainState {
 }
 
 public struct Frankcoin {
-    public static let programId = "CosvVR3aNvHcFPtyzZuD385kvBo2aVa3jZapttst1aqY"
+    public static let programId = "61yBp4FQSXq6qxS1Scny8LRBNDLDoNQBKupofVSyyHL8"
     static let tokenProgram = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
     static let ataProgram = "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
     static let systemProgram = "11111111111111111111111111111111"

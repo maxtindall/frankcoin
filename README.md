@@ -1,22 +1,23 @@
 # frankcoin
 
-A proof-of-work currency on Solana, denominated in **FRANKS**. Live on devnet;
+A proof-of-work currency on Solana, denominated in **franks**. Live on devnet;
 mined, never sold.
 
-    program   CosvVR3aNvHcFPtyzZuD385kvBo2aVa3jZapttst1aqY   (devnet)
+    program   61yBp4FQSXq6qxS1Scny8LRBNDLDoNQBKupofVSyyHL8   (devnet)
     site      https://0state.website
 
 ## What it is
 
 The program holds its own mint authority. No wallet, person or company can
-issue a FRANK by signing for it — the only way one comes into existence is that
+issue a frank by signing for it — the only way one comes into existence is that
 somebody submitted work the program checked and accepted.
 
 | | |
 |---|---|
-| **Supply** | 1,000,000,000 FRANKS, 9 decimals. Enforced on-chain; unexceedable. |
+| **Supply** | 1,000,000,000 franks, 9 decimals. Enforced on-chain; unexceedable. |
 | **Issuance** | Mined from zero. No pre-mine, no allocation, no admin-mint instruction. |
-| **Reward** | 500 FRANKS per accepted proof at genesis, halving each supply tranche (500M → 250M → 125M …). The series sums to the cap; integer dust near the top stays unmined, Bitcoin-style. |
+| **Reward** | 500 franks per accepted proof at genesis, halving each supply tranche (500M → 250M → 125M …). The series sums to the cap; integer dust near the top stays unmined, Bitcoin-style. |
+| **Rate** | One claim per wallet per **cooldown** (300s on devnet). This is what keeps CPU mining viable — see below. |
 | **Proof** | `keccak(challenge ‖ miner ‖ nonce_le)` must carry ≥ `difficulty` leading zero bits. |
 | **Replay** | Each miner holds a rolling challenge that advances on every accepted proof. |
 
@@ -41,6 +42,24 @@ challenge an old nonce is simply a bad guess.
       index.html              the page
       frankcoin.js            built bundle (committed, so the site is static)
 
+## Why a laptop can compete
+
+keccak is a GPU hash — there is a decade of tooling pointed at it, and a GPU
+beats a CPU by orders of magnitude. Nothing in the client changes that, and a
+memory-hard alternative (RandomX, Argon2) cannot be verified inside a Solana
+program's compute budget. So the defence is not the hash. It is the **cooldown**.
+
+Difficulty is set so an ordinary machine finds a proof in *well under* the
+cooldown — measured at 12 seconds against a 300 second cooldown. Past that
+point extra hashpower buys nothing: every wallet claims once per cooldown,
+whether it took 12 seconds or a tenth of one. A laptop mines as much as a rig.
+
+What remains is Sybil — one fast machine driving many wallets. Each
+registration allocates a padded Proof account, so it locks roughly **0.0078 SOL**
+of rent: about a dollar to start mining honestly, and ~7.8 SOL to run a thousand
+wallets. That is a real cost, not a prohibitive one, and it is described here as
+what it is. Without identity, nobody solves Sybil outright.
+
 ## Tests
 
     anchor build
@@ -54,10 +73,19 @@ silent and baffling.
 
 ## Mining
 
-Mining happens in a **macOS application, on the miner's own machine, tied to
-the miner's own wallet.** That is the only miner this project ships.
+Mining happens on the miner's own machine, tied to the miner's own wallet.
+Two front ends, one verified core:
 
-    cd mac && ./build.sh          # builds build/frankcoin miner.app
+    brew install maxtindall/frankcoin/frankcoin    # the CLI, built from source
+    cd mac && ./build.sh                           # the app
+
+    frankcoin status      the chain, and your position
+    frankcoin register    once per wallet; creates your challenge
+    frankcoin mine        search, and claim what you find
+
+The CLI is the honest default: Homebrew builds it from source on your machine,
+so there is no binary to trust with a keypair. The app is the same core with a
+window around it.
 
 It needs nothing but the Swift toolchain from the Xcode Command Line Tools —
 no Xcode project, and no third-party packages. Everything the app needs is
@@ -113,7 +141,7 @@ Not deployed to mainnet, and it should not be until:
 
 frankcoin is an artwork about issuing money. It is given away, never sold.
 There is no offer, no sale, no fundraising and no investment here, and nothing
-in this repository or on the site is financial advice. Devnet FRANKS are test
+in this repository or on the site is financial advice. Devnet franks are test
 tokens: they cannot be sold and are worth nothing.
 
 MIT licensed. The Mac app is the only miner that exists — unless somebody

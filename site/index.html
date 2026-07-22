@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>frankcoin — a currency you have to find</title>
-<meta name="description" content="A proof-of-work currency on Solana. One billion FRANKS, all of them mined from zero, in your own browser. No pre-mine, no sale, no allocation.">
+<meta name="description" content="A proof-of-work currency on Solana. One billion franks, all of them mined from zero, in your own browser. No pre-mine, no sale, no allocation.">
 <style>
   :root{
     --ground:#0B0B0C; --surface:#131316; --raised:#1A1A1E;
@@ -147,7 +147,7 @@
   <header>
     <h1>A currency<br>you have to find.</h1>
     <p class="lede">
-      One billion FRANKS, mined from zero on the miner's own Mac. None sold,
+      One billion franks, mined from zero on the miner's own Mac. None sold,
       none reserved, none pre-mined. There is one way to get them, and it runs
       on your desk.
     </p>
@@ -194,7 +194,7 @@
       <h2>How it works</h2>
       <p>
         The program on Solana holds its own mint authority. No person, wallet or
-        company can issue a FRANK by signing for it &mdash; the only way a FRANK
+        company can issue a frank by signing for it &mdash; the only way a frank
         comes into existence is that someone submitted work the program checked
         and accepted.
       </p>
@@ -209,9 +209,9 @@
     </div>
 
     <dl class="terms">
-      <div class="term"><dt>Supply</dt><dd>1,000,000,000 FRANKS, nine decimals. The cap is enforced on-chain and cannot be exceeded by anyone, including its author.</dd></div>
+      <div class="term"><dt>Supply</dt><dd>1,000,000,000 franks, nine decimals. The cap is enforced on-chain and cannot be exceeded by anyone, including its author.</dd></div>
       <div class="term"><dt>Issuance</dt><dd>Mined from zero. No pre-mine, no founder allocation, no admin mint instruction anywhere in the program.</dd></div>
-      <div class="term"><dt>Reward</dt><dd>500 FRANKS per accepted proof at genesis, halving with each tranche of supply &mdash; 500M, then 250M, then 125M, and so on.</dd></div>
+      <div class="term"><dt>Reward</dt><dd>500 franks per accepted proof at genesis, halving with each tranche of supply &mdash; 500M, then 250M, then 125M, and so on.</dd></div>
       <div class="term"><dt>Proof</dt><dd><code>keccak(challenge &#8214; miner &#8214; nonce)</code> must carry at least <em>difficulty</em> leading zero bits.</dd></div>
       <div class="term"><dt>Custody</dt><dd>The Mac app holds your keypair locally and signs every proof on your machine. This site holds nothing, takes no cut, and cannot mine — it only reports what the chain says.</dd></div>
       <div class="term"><dt>Source</dt><dd>The program, its tests and the Mac miner are public. The app is the only miner that exists — unless somebody builds another, which the protocol permits and nothing prevents.</dd></div>
@@ -219,7 +219,7 @@
 
     <div class="warn">
       <strong>Read this before you mine</strong>
-      frankcoin runs on <em>devnet</em>, Solana's test network. These FRANKS are
+      frankcoin runs on <em>devnet</em>, Solana's test network. These franks are
       test tokens: they cannot be sold, are worth nothing, and will be worth
       nothing. There is no offer, no sale and no investment here, and nothing on
       this page is financial advice. It is an artwork about issuing money, and it
@@ -229,7 +229,7 @@
   </section>
 
   <footer>
-    frankcoin &middot; denominated in FRANKS &middot; program <code id="fProgram">&mdash;</code><br>
+    frankcoin &middot; denominated in franks &middot; program <code id="fProgram">&mdash;</code><br>
     a Max Tindall Inc art project &middot; no offer, no advice, no sale
   </footer>
 </div>
@@ -256,10 +256,10 @@
     if (!st.deployed) { set('status', 'not deployed on this cluster'); $('dot').className = 'dot'; return; }
     set('status', 'live');
     $('dot').className = 'dot on';
-    set('fMinted', fmt(st.totalMinted) + ' FRANKS');
+    set('fMinted', fmt(st.totalMinted) + ' franks');
     set('fCap', fmt(st.cap));
     set('fProofs', fmt(st.proofsAccepted));
-    set('fReward', fmt(st.nextReward) + ' FRANKS');
+    set('fReward', fmt(st.nextReward) + ' franks');
     set('fDiff', st.difficulty + ' bits');
     set('fMint', st.mint);
   }

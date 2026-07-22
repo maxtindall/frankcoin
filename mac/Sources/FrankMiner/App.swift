@@ -93,7 +93,7 @@ final class Model: ObservableObject {
             let found: Miner.Found? = await withCheckedContinuation { cont in
                 DispatchQueue.global(qos: .userInitiated).async {
                     let r = m.grind(challenge: st.challenge, miner: w.pubkey.bytes,
-                                    difficulty: st.difficulty) { h, secs in
+                                    difficulty: st.difficulty) { h, secs, _ in
                         Task { @MainActor in
                             self.hashes = h
                             self.rate = Double(h) / max(secs, 0.001)
@@ -112,7 +112,7 @@ final class Model: ObservableObject {
                 await MainActor.run {
                     self.sessionProofs += 1
                     self.sessionFranks += st.nextReward
-                    self.say("Minted \(Int(st.nextReward)) FRANKS. Your challenge has rolled.")
+                    self.say("Minted \(Int(st.nextReward)) franks. Your challenge has rolled.")
                 }
             } catch {
                 let msg = error.localizedDescription
@@ -252,12 +252,12 @@ struct ContentView: View {
             SectionLabel(text: "the chain · devnet")
             Row(label: "program", value: m.status)
             Row(label: "mined so far",
-                value: m.state.deployed ? "\(Int(m.state.totalMinted).formatted()) FRANKS" : "—",
+                value: m.state.deployed ? "\(Int(m.state.totalMinted).formatted()) franks" : "—",
                 bright: true)
             Row(label: "proofs accepted",
                 value: m.state.deployed ? "\(m.state.proofsAccepted)" : "—")
             Row(label: "next reward",
-                value: m.state.deployed ? "\(Int(m.state.nextReward)) FRANKS per proof" : "—")
+                value: m.state.deployed ? "\(Int(m.state.nextReward)) franks per proof" : "—")
             Row(label: "difficulty",
                 value: m.state.deployed ? "\(m.state.difficulty) bits" : "—")
             Row(label: "this machine", value: Hardware.machineSummary)
@@ -270,10 +270,10 @@ struct ContentView: View {
             Row(label: "wallet",
                 value: m.wallet.map { String($0.pubkey.base58.prefix(16)) + "…" } ?? "no wallet loaded")
             Row(label: "you have mined",
-                value: m.wallet == nil ? "—" : "\(Int(m.state.mined).formatted()) FRANKS over \(m.state.proofs) proofs",
+                value: m.wallet == nil ? "—" : "\(Int(m.state.mined).formatted()) franks over \(m.state.proofs) proofs",
                 bright: m.state.mined > 0)
             Row(label: "this session",
-                value: "\(Int(m.sessionFranks).formatted()) FRANKS · \(m.sessionProofs) proofs")
+                value: "\(Int(m.sessionFranks).formatted()) franks · \(m.sessionProofs) proofs")
             Row(label: "hash rate",
                 value: m.mining ? "\(Int(m.rate).formatted()) hashes/sec" : "idle",
                 bright: m.mining)

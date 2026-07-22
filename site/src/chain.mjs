@@ -9,7 +9,7 @@
  */
 import { Connection, PublicKey } from '@solana/web3.js';
 
-export const PROGRAM_ID = 'CosvVR3aNvHcFPtyzZuD385kvBo2aVa3jZapttst1aqY';
+export const PROGRAM_ID = '61yBp4FQSXq6qxS1Scny8LRBNDLDoNQBKupofVSyyHL8';
 const ONE_FRANK = 1e9;
 const CAP = 1000000000n * BigInt(ONE_FRANK);
 

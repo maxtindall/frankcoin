@@ -16,7 +16,15 @@ pub struct Register<'info> {
     #[account(
         init,
         payer = miner,
-        space = 8 + Proof::INIT_SPACE,
+        // 8 discriminator + the struct + SYBIL_BOND of unused tail.
+        //
+        // Once the cooldown binds, extra hashpower buys nothing: the only way
+        // to out-mine a laptop is to run many wallets. Paying rent on this tail
+        // makes each additional wallet a real capital lockup rather than dust.
+        // The lamports are recoverable by closing the account, so it is a bond
+        // and not a fee. Anchor ignores trailing bytes, so the account layout
+        // every client parses is unchanged.
+        space = 8 + Proof::INIT_SPACE + SYBIL_BOND,
         seeds = [PROOF_SEED, miner.key().as_ref()],
         bump
     )]

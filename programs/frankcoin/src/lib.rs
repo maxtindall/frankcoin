@@ -9,7 +9,7 @@ pub use constants::*;
 pub use instructions::*;
 pub use state::*;
 
-declare_id!("CosvVR3aNvHcFPtyzZuD385kvBo2aVa3jZapttst1aqY");
+declare_id!("61yBp4FQSXq6qxS1Scny8LRBNDLDoNQBKupofVSyyHL8");
 
 /// frankcoin — a proof-of-work currency for the open bot project.
 /// Denominated in FRANKS. Fully mined from zero, 100,000,000 cap, no pre-mint,
