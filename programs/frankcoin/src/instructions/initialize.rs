@@ -5,7 +5,7 @@ use crate::{constants::*, state::Config};
 
 /// One-time genesis. Creates the mint and the config, and — critically — sets
 /// the mint authority to the config PDA. From this instruction on, the only
-/// path to new FRANK is proof-of-work via `mine`. There is no `mint` admin
+/// path to new FRANKS is proof-of-work via `mine`. There is no `mint` admin
 /// instruction anywhere in this program.
 #[derive(Accounts)]
 pub struct Initialize<'info> {

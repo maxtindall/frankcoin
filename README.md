@@ -1,12 +1,12 @@
 # frankcoin
 
-A proof-of-work currency for the open bot project. Denominated in **FRANK**.
+A proof-of-work currency for the open bot project. Denominated in **FRANKS**.
 
-- **Cap:** 1,000,000,000 FRANK (9 decimals). Enforced on-chain; unexceedable.
+- **Cap:** 1,000,000,000 FRANKS (9 decimals). Enforced on-chain; unexceedable.
 - **Issuance:** fully mined from zero. No pre-mint, no founder allocation, no
   admin mint. The program's config PDA holds the mint authority — no wallet can
   mint by signing.
-- **Reward:** 500 FRANK per accepted proof at genesis, halving each supply
+- **Reward:** 500 FRANKS per accepted proof at genesis, halving each supply
   tranche (500M → 250M → 125M …). The series sums to the cap; integer dust near
   the top stays unmined, Bitcoin-style.
 - **Proof:** `keccak(challenge || miner || nonce)` must have ≥ `difficulty`
@@ -26,7 +26,7 @@ A proof-of-work currency for the open bot project. Denominated in **FRANK**.
     cargo test -p frankcoin          # unit (cap/halving math) + integration (mine flow)
 
 All green: cap never exceeded, halving series converges to the cap, stale
-proofs rejected, reward = 500 FRANK/proof at genesis.
+proofs rejected, reward = 500 FRANKS/proof at genesis.
 
 ## Devnet deploy (safe rehearsal — do this first)
 

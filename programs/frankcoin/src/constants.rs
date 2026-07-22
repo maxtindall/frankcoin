@@ -1,16 +1,16 @@
 use anchor_lang::prelude::*;
 
-/// FRANK has 9 decimals (SPL standard).
+/// FRANKS has 9 decimals (SPL standard).
 #[constant]
 pub const DECIMALS: u8 = 9;
 
-/// Base units in one FRANK: 10^9.
+/// Base units in one FRANKS: 10^9.
 pub const ONE_FRANK: u64 = 1_000_000_000;
 
-/// Hard cap: 1,000,000,000 FRANK. The program can never mint beyond this.
+/// Hard cap: 1,000,000,000 FRANKS. The program can never mint beyond this.
 pub const MAX_SUPPLY: u64 = 1_000_000_000 * ONE_FRANK; // 10^18, fits in u64 (max ~1.8e19)
 
-/// Genesis reward per accepted proof, in base units (500 FRANK). Halves each
+/// Genesis reward per accepted proof, in base units (500 FRANKS). Halves each
 /// supply tranche, so the whole halving series sums to exactly MAX_SUPPLY.
 pub const INITIAL_REWARD: u64 = 500 * ONE_FRANK;
 

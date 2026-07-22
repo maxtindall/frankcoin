@@ -59,8 +59,8 @@ async function main(){
     tokenProgram: TOKEN, associatedTokenProgram: ATA_PROG, systemProgram: SystemProgram.programId }).rpc();
   console.log('FIRST MINE ok  sig', sig);
   const bal = await conn.getTokenAccountBalance(ata);
-  console.log('BALANCE', bal.value.uiAmount, 'FRANK');
+  console.log('BALANCE', bal.value.uiAmount, 'FRANKS');
   const cfg = await program.account.config.fetch(config);
-  console.log('total_minted', (cfg.totalMinted.toNumber()/1e9), 'FRANK');
+  console.log('total_minted', (cfg.totalMinted.toNumber()/1e9), 'FRANKS');
 }
 main().catch(e=>{console.error(String(e).slice(0,300));process.exit(1);});

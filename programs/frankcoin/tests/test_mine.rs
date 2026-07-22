@@ -117,7 +117,7 @@ fn mine_grants_reward_and_enforces_rules() {
 
     let n1 = grind(&read_challenge(&svm), &miner.pubkey(), 8);
     assert!(send(&mut svm, &[mk_mine(n1)], &miner, &[&miner]), "first mine failed");
-    assert_eq!(token_balance(&svm, &miner_ata), 500_000_000_000, "first reward should be 500 FRANK");
+    assert_eq!(token_balance(&svm, &miner_ata), 500_000_000_000, "first reward should be 500 FRANKS");
 
     // --- config.total_minted tracks it ---
     let cfg = frankcoin::state::Config::try_deserialize(
@@ -131,8 +131,8 @@ fn mine_grants_reward_and_enforces_rules() {
     assert!(!send(&mut svm, &[mk_mine(n1)], &miner, &[&miner]),
         "stale nonce must be rejected after the challenge rolls");
 
-    // --- mine again with a freshly ground nonce -> 100 FRANK ---
+    // --- mine again with a freshly ground nonce -> 100 FRANKS ---
     let n2 = grind(&read_challenge(&svm), &miner.pubkey(), 8);
     assert!(send(&mut svm, &[mk_mine(n2)], &miner, &[&miner]), "second mine failed");
-    assert_eq!(token_balance(&svm, &miner_ata), 1_000_000_000_000, "two rewards = 1000 FRANK");
+    assert_eq!(token_balance(&svm, &miner_ata), 1_000_000_000_000, "two rewards = 1000 FRANKS");
 }

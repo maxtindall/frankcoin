@@ -127,7 +127,7 @@ fn leading_zero_bits(hash: &[u8; 32]) -> u32 {
     count
 }
 
-/// Reward halves each supply tranche. Band 0 = first 50M FRANK at 50/proof,
+/// Reward halves each supply tranche. Band 0 = first 50M FRANKS at 50/proof,
 /// band 1 = next 25M at 25/proof, band 2 = next 12.5M at 12.5/proof, ... The
 /// full series sums to exactly MAX_SUPPLY. Cap exactness is separately
 /// guaranteed by the clamp in the handler.
@@ -158,9 +158,9 @@ mod reward_tests {
 
     #[test]
     fn reward_halves_each_tranche() {
-        // band 1 starts at 50M cumulative -> reward 25 FRANK
+        // band 1 starts at 50M cumulative -> reward 25 FRANKS
         assert_eq!(reward_for(MAX_SUPPLY / 2), INITIAL_REWARD / 2);
-        // band 2 starts at 75M cumulative -> reward 12.5 FRANK
+        // band 2 starts at 75M cumulative -> reward 12.5 FRANKS
         assert_eq!(reward_for(MAX_SUPPLY / 2 + MAX_SUPPLY / 4), INITIAL_REWARD / 4);
     }
 

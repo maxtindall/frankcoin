@@ -2,7 +2,7 @@
 // frankcoin CPU miner (reference implementation).
 //
 // Grinds keccak proofs against the frankcoin program and submits them to mint
-// FRANK to your wallet. Permissionless: this is one miner; anyone can write
+// FRANKS to your wallet. Permissionless: this is one miner; anyone can write
 // another. Signs with YOUR keypair — no server, no custody.
 //
 // Usage:
