@@ -8,8 +8,11 @@ skip-lint = false
 [programs.localnet]
 frankcoin = "CosvVR3aNvHcFPtyzZuD385kvBo2aVa3jZapttst1aqY"
 
+[programs.devnet]
+frankcoin = "CosvVR3aNvHcFPtyzZuD385kvBo2aVa3jZapttst1aqY"
+
 [provider]
-cluster = "localnet"
+cluster = "devnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]

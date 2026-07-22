@@ -11,7 +11,8 @@
 // Requires: @solana/web3.js, @coral-xyz/anchor, js-sha3  (npm i in this dir)
 
 import fs from 'fs';
-import { keccak256 } from 'js-sha3';
+import sha3 from 'js-sha3';
+const { keccak256 } = sha3;
 import anchor from '@coral-xyz/anchor';
 import { Connection, Keypair, PublicKey, SystemProgram } from '@solana/web3.js';
 
