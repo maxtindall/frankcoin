@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>frankcoin</title>
-<meta name="description" content="frankcoin — a currency you have to find. One billion franks, none sold, none reserved, every one of them found on somebody's own machine. An art project.">
+<meta name="description" content="frankcoin — a currency you can mine. One billion franks, none sold, none reserved, every one of them mined on somebody's own machine. An art project.">
 <style>
   :root{
     --black:#000;
@@ -104,6 +104,14 @@
   footer{margin-top:52px;color:var(--faint);font-size:11px;letter-spacing:1px;
     line-height:1.9;word-break:break-all}
 
+  /* --- the emblem ---------------------------------------------------
+     A coin, in the corner, on the same tube as everything else: it sits
+     under the scanline layer so it is lit by it rather than pasted on top. */
+  #emblem{position:fixed;right:20px;bottom:20px;width:170px;height:170px;
+    z-index:7;pointer-events:none;opacity:.92}
+  @media(max-width:640px){#emblem{width:104px;height:104px;right:12px;bottom:12px}}
+  @media(max-width:380px){#emblem{display:none}}
+
   @media (prefers-reduced-motion:reduce){
     .cursor{animation:none}
     body::before{display:none}
@@ -116,17 +124,16 @@
   <!-- The real text lives in the DOM and the script retypes it, so nothing is
        lost if the script never runs. -->
   <h1 class="brand" data-type>frankcoin</h1>
-  <div class="tag" data-type>a currency you have to find</div>
+  <div class="tag" data-type>a currency you can mine.</div>
 
   <section>
     <div class="q" data-type>what it is</div>
-    <p data-type>One billion franks. None sold, none reserved, none held back for anyone. Every frank that will ever exist has to be found first.</p>
-    <p data-type>The program holds its own mint authority. No person — including whoever wrote it — can bring a frank into being by signing for it. The only thing it accepts is work.</p>
-    <p class="aside" data-type>There is nothing here to buy. It is an argument about where money comes from, made in the one language a machine takes seriously.</p>
+    <p data-type>One billion franks. None sold, none reserved, none held back for anyone. Every frank that will ever exist has to be mined first.</p>
+    <p data-type>The program holds its own mint authority. No person — including the developer — can bring a frank into being by signing for it. The only thing it accepts is work.</p>
   </section>
 
   <section>
-    <div class="q" data-type>the chain reports</div>
+    <div class="q" data-type>on-chain</div>
     <dl class="report">
       <div class="line"><dt>mined so far</dt><dd id="fMinted">&mdash;</dd></div>
       <div class="line"><dt>of a cap of</dt><dd id="fCap">1,000,000,000</dd></div>
@@ -150,7 +157,7 @@
   </section>
 
   <section>
-    <div class="q" data-type>to look for some</div>
+    <div class="q" data-type>how to mine</div>
     <button class="cmd" id="cmd" type="button" title="click to copy"><span class="sig">$ </span>brew install maxtindall/frankcoin/frankcoin</button>
     <div class="copied" id="copied"></div>
     <div class="alt">
@@ -160,13 +167,15 @@
     </div>
   </section>
 
-  <div class="disc" data-type>frankcoin runs on a test network. These franks cannot be sold and are worth nothing. There is no offer, no sale and no advice here. It is an artwork about issuing money, and it is given away rather than sold.</div>
+  <div class="disc" data-type>frankcoin runs on Solana's devnet, not mainnet — devnet franks cannot be sold and are worth nothing.</div>
 
   <footer>
     max tindall inc &middot; mined, never sold<br>
     <span id="fProgram">&mdash;</span>
   </footer>
 </div>
+
+<canvas id="emblem" width="340" height="340" aria-hidden="true"></canvas>
 
 <script src="./frankcoin.js"></script>
 <script>
@@ -297,6 +306,205 @@
   }
   report();
   setInterval(report, 30000);
+
+  // ---- the emblem ---------------------------------------------------------
+  //
+  // A coin drawn as points and rim, spun about its axis, which periodically
+  // flies apart and comes back together. No library and no WebGL: the maths is
+  // a rotation and a weak perspective divide, which is all a coin needs.
+  //
+  // Reforming is exact by construction. A point is always drawn at
+  // rotate(home) + displacement, so the coin cannot drift out of shape —
+  // easing displacement to zero necessarily restores it.
+  (function emblem() {
+    var cv = document.getElementById('emblem');
+    if (!cv || !cv.getContext) return;
+    var ctx = cv.getContext('2d');
+    var W = cv.width, H = cv.height, CX = W / 2, CY = H / 2;
+
+    var pts = [];                       // {hx,hy,hz, dx,dy,dz, vx,vy,vz, r}
+    var rim = [];                       // indices around the edge, drawn as a loop
+
+    function add(x, y, z, kind) {
+      pts.push({ hx: x, hy: y, hz: z, dx: 0, dy: 0, dz: 0, vx: 0, vy: 0, vz: 0, k: kind });
+      return pts.length - 1;
+    }
+
+    var R = 1.0, T = 0.12;              // radius, half-thickness
+
+    // The milled edge, and the loop that draws the coin's outline.
+    var N = 56;
+    for (var i = 0; i < N; i++) {
+      var a = i / N * Math.PI * 2;
+      var x = Math.cos(a) * R, y = Math.sin(a) * R;
+      rim.push(add(x, y, -T, 'rim'));
+      add(x, y, T, 'rim');
+    }
+    // An inner ring on each face, so the coin reads as struck rather than flat.
+    for (var j = 0; j < 40; j++) {
+      var b = j / 40 * Math.PI * 2;
+      add(Math.cos(b) * 0.80, Math.sin(b) * 0.80, T, 'face');
+      add(Math.cos(b) * 0.80, Math.sin(b) * 0.80, -T, 'face');
+    }
+
+    // The device on the face: sample a glyph from an offscreen canvas and
+    // lift its dark pixels into 3D. Cheaper than hand-plotting a letterform,
+    // and it stays in the same typeface as the rest of the page.
+    (function stamp() {
+      var g = document.createElement('canvas');
+      g.width = g.height = 44;
+      var gc = g.getContext('2d');
+      gc.fillStyle = '#fff';
+      gc.font = 'bold 34px "Courier New", monospace';
+      gc.textAlign = 'center';
+      gc.textBaseline = 'middle';
+      gc.fillText('F', 22, 23);
+      var d;
+      try { d = gc.getImageData(0, 0, 44, 44).data; } catch (e) { return; }
+      for (var y = 0; y < 44; y += 2) {
+        for (var x = 0; x < 44; x += 2) {
+          if (d[(y * 44 + x) * 4 + 3] < 140) continue;
+          var nx = (x - 22) / 44 * 1.15, ny = (y - 22) / 44 * 1.15;
+          if (nx * nx + ny * ny > 0.42) continue;
+          add(nx, ny, T + 0.02, 'glyph');
+          add(-nx, ny, -T - 0.02, 'glyph');   // mirrored, so it reads from behind
+        }
+      }
+    })();
+
+    var GREEN = '53,255,106';
+    var spin = 0, spinRate = 0.0075, wobble = 0;
+    var reduce = window.matchMedia
+      && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // idle -> burst -> reform -> idle
+    var IDLE = 0, BURST = 1, REFORM = 2;
+    var phase = IDLE, phaseAt = 0;
+    var IDLE_MS = 11000, BURST_MS = 1500, REFORM_MS = 1900;
+
+    function detonate() {
+      for (var i = 0; i < pts.length; i++) {
+        var p = pts[i];
+        var len = Math.sqrt(p.hx * p.hx + p.hy * p.hy + p.hz * p.hz) || 1;
+        var push = 0.020 + Math.random() * 0.026;
+        p.vx = (p.hx / len) * push + (Math.random() - 0.5) * 0.014;
+        p.vy = (p.hy / len) * push + (Math.random() - 0.5) * 0.014;
+        p.vz = (p.hz / len) * push * 0.7 + (Math.random() - 0.5) * 0.014;
+      }
+    }
+
+    function easeInOut(t) {
+      return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    }
+
+    var start = 0;
+    function frame(now) {
+      if (!start) { start = now; phaseAt = now; }
+      var dt = 16;
+      ctx.clearRect(0, 0, W, H);
+
+      if (!reduce) {
+        var elapsed = now - phaseAt;
+        if (phase === IDLE && elapsed > IDLE_MS) {
+          phase = BURST; phaseAt = now; detonate();
+        } else if (phase === BURST && elapsed > BURST_MS) {
+          phase = REFORM; phaseAt = now;
+          for (var q = 0; q < pts.length; q++) {
+            var pp = pts[q];
+            pp.sx = pp.dx; pp.sy = pp.dy; pp.sz = pp.dz;   // where the pieces got to
+          }
+        } else if (phase === REFORM && elapsed > REFORM_MS) {
+          phase = IDLE; phaseAt = now;
+          // Land it exactly. Easing alone would leave a hair of drift, and a
+          // coin that is nearly round reads as broken.
+          for (var z0 = 0; z0 < pts.length; z0++) {
+            pts[z0].dx = pts[z0].dy = pts[z0].dz = 0;
+          }
+        }
+        // The phase may have just changed, so measure against the new clock
+        // rather than the one we read on the way in.
+        elapsed = now - phaseAt;
+
+        if (phase === BURST) {
+          for (var i = 0; i < pts.length; i++) {
+            var p = pts[i];
+            p.dx += p.vx; p.dy += p.vy; p.dz += p.vz;
+            p.vx *= 0.985; p.vy *= 0.985; p.vz *= 0.985;
+          }
+        } else if (phase === REFORM) {
+          var k = 1 - easeInOut(Math.min(elapsed / REFORM_MS, 1));
+          for (var m = 0; m < pts.length; m++) {
+            var pm = pts[m];
+            pm.dx = (pm.sx || 0) * k; pm.dy = (pm.sy || 0) * k; pm.dz = (pm.sz || 0) * k;
+          }
+        }
+
+        // The coin spins faster while it is in pieces, and settles as it knits.
+        var boost = phase === BURST ? 2.6 : (phase === REFORM ? 1.7 : 1);
+        spin += spinRate * boost;
+        wobble = Math.sin(now / 2600) * 0.22;
+      }
+
+      var cs = Math.cos(spin), sn = Math.sin(spin);
+      var cw = Math.cos(wobble), sw = Math.sin(wobble);
+
+      // How intact the coin is, 1 whole -> 0 scattered. Drives the rim and glow.
+      var spread = 0;
+      for (var t = 0; t < pts.length; t += 7) {
+        var pt = pts[t];
+        spread += Math.abs(pt.dx) + Math.abs(pt.dy) + Math.abs(pt.dz);
+      }
+      spread = Math.min(spread / (pts.length / 7) / 0.9, 1);
+      var intact = 1 - spread;
+
+      var proj = [];
+      for (var n2 = 0; n2 < pts.length; n2++) {
+        var pn = pts[n2];
+        var x = pn.hx + pn.dx, y = pn.hy + pn.dy, z = pn.hz + pn.dz;
+        var x1 = x * cs + z * sn, z1 = z * cs - x * sn;      // spin about Y
+        var y1 = y * cw - z1 * sw, z2 = z1 * cw + y * sw;    // tip about X
+        var persp = 3.1 / (3.1 + z2);
+        proj.push({
+          x: CX + x1 * 118 * persp,
+          y: CY + y1 * 118 * persp,
+          s: persp,
+          z: z2,
+          k: pn.k
+        });
+      }
+
+      // The outline, only while the coin still holds together.
+      if (intact > 0.12) {
+        ctx.strokeStyle = 'rgba(' + GREEN + ',' + (0.5 * intact) + ')';
+        ctx.lineWidth = 1.1;
+        ctx.beginPath();
+        for (var r2 = 0; r2 < rim.length; r2++) {
+          var pr = proj[rim[r2]];
+          if (r2 === 0) ctx.moveTo(pr.x, pr.y); else ctx.lineTo(pr.x, pr.y);
+        }
+        ctx.closePath();
+        ctx.stroke();
+      }
+
+      // Points, far to near, so nearer pieces read as nearer.
+      proj.sort(function (a, b) { return b.z - a.z; });
+      ctx.shadowColor = 'rgba(' + GREEN + ',0.85)';
+      for (var d2 = 0; d2 < proj.length; d2++) {
+        var pd = proj[d2];
+        var depth = 0.35 + 0.65 * pd.s;
+        var size = (pd.k === 'glyph' ? 1.9 : 1.5) * pd.s;
+        ctx.shadowBlur = pd.k === 'glyph' ? 7 : 4;
+        ctx.fillStyle = 'rgba(' + GREEN + ',' + (depth * (0.55 + 0.45 * intact)) + ')';
+        ctx.beginPath();
+        ctx.arc(pd.x, pd.y, Math.max(size, 0.6), 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.shadowBlur = 0;
+
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  })();
 
   // ---- the only interaction on the page -----------------------------------
   document.getElementById('cmd').addEventListener('click', function () {
