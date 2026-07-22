@@ -3,7 +3,7 @@ import { build } from 'esbuild';
 import { polyfillNode } from 'esbuild-plugin-polyfill-node';
 
 await build({
-  entryPoints: ['src/miner.mjs'],
+  entryPoints: ['src/chain.mjs'],
   bundle: true,
   format: 'iife',
   globalName: 'Frankcoin',
