@@ -7,9 +7,11 @@ skip-lint = false
 
 [programs.localnet]
 frankcoin = "61yBp4FQSXq6qxS1Scny8LRBNDLDoNQBKupofVSyyHL8"
+zerostate = "CcEbfypSNbA1YKPsW7PVLRQzzEnKKMcPXBL7CxDW9Joz"
 
 [programs.devnet]
 frankcoin = "61yBp4FQSXq6qxS1Scny8LRBNDLDoNQBKupofVSyyHL8"
+zerostate = "CcEbfypSNbA1YKPsW7PVLRQzzEnKKMcPXBL7CxDW9Joz"
 
 [provider]
 cluster = "devnet"

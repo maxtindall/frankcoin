@@ -1,0 +1,45 @@
+[package]
+name = "zerostate"
+version = "0.1.0"
+description = "0state DAO — communist, proof-of-mine governance over frankcoin"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "zerostate"
+
+[features]
+default = []
+cpi = ["no-entrypoint"]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+# Building the IDL compiles the frankcoin dependency (we reference its Proof
+# account type), and that pulls in anchor-spl. Both need their idl-build shims,
+# or the derive macro emits calls to `insert_types` that don't exist on
+# anchor_spl types. Chain to frankcoin/idl-build, which itself enables
+# anchor-lang + anchor-spl idl-build.
+idl-build = ["anchor-lang/idl-build", "frankcoin/idl-build"]
+
+[dependencies]
+anchor-lang = "1.0.2"
+# We depend on frankcoin only to read its Proof account with the real type,
+# never to call it. `no-entrypoint` pulls in the types without a second program
+# entrypoint. This is what makes the proof-of-mining gate honest: Anchor's
+# Account<Proof> verifies the account is genuinely owned by the frankcoin
+# program, so a citizen cannot forge a Proof.
+frankcoin = { path = "../frankcoin", features = ["no-entrypoint"] }
+
+[dev-dependencies]
+litesvm = "0.10.0"
+anchor-spl = "1.0.2"
+solana-keccak-hasher = "3.1.0"
+solana-pubkey = "3.0.0"
+solana-account = "3.0.0"
+solana-message = "3.0.1"
+solana-transaction = "3.0.2"
+solana-signer = "3.0.0"
+solana-keypair = "3.0.1"
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(target_os, values("solana"))'] }
