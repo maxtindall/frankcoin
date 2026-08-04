@@ -33,4 +33,13 @@ pub mod frankcoin {
     pub fn mine(ctx: Context<Mine>, nonce: u64) -> Result<()> {
         instructions::mine::handler(ctx, nonce)
     }
+
+    /// One-time: attach Metaplex token metadata (name/symbol/uri) to the mint so
+    /// explorers show "frankcoin" instead of a generic SPL token. The program
+    /// signs as its own mint authority (config PDA); gated to the upgrade
+    /// authority so the identity can't be front-run. Created mutable, to be
+    /// frozen at mainnet.
+    pub fn create_metadata(ctx: Context<CreateMetadata>, name: String, symbol: String, uri: String) -> Result<()> {
+        instructions::create_metadata::handler(ctx, name, symbol, uri)
+    }
 }

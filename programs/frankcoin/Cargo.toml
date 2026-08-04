@@ -22,7 +22,9 @@ custom-panic = []
 
 [dependencies]
 anchor-lang = { version = "1.0.2", features = ["init-if-needed"] }
-anchor-spl = "1.0.2"
+# `metadata` pulls in the Metaplex Token Metadata CPI helpers so the program can
+# attach a name/symbol to its own mint (signing as the mint-authority PDA).
+anchor-spl = { version = "1.0.2", features = ["metadata"] }
 solana-keccak-hasher = "3.1.0"
 
 [dev-dependencies]

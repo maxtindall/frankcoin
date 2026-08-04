@@ -10,4 +10,6 @@ pub enum FrankError {
     Cooldown,
     #[msg("arithmetic overflow")]
     Overflow,
+    #[msg("only the program's upgrade authority may set token metadata")]
+    NotUpgradeAuthority,
 }
