@@ -45,6 +45,13 @@ public struct Frankcoin {
         Pda.find([miner.bytes, Pubkey(base58: Frankcoin.tokenProgram)!.bytes, mintPda().bytes],
                  program: Pubkey(base58: Frankcoin.ataProgram)!)!.0
     }
+    // The DAO treasury: a program PDA and its token account. 10% of every reward
+    // is minted here automatically; every mine must pass both accounts.
+    public func treasuryPda() -> Pubkey { Pda.find([seeds("treasury")], program: program)!.0 }
+    public func treasuryAtaPda() -> Pubkey {
+        Pda.find([treasuryPda().bytes, Pubkey(base58: Frankcoin.tokenProgram)!.bytes, mintPda().bytes],
+                 program: Pubkey(base58: Frankcoin.ataProgram)!)!.0
+    }
 
     /// What the next accepted proof pays. Mirrors reward_for() in the program.
     public static func reward(forTotalMinted minted: UInt64) -> Double {
@@ -112,6 +119,8 @@ public struct Frankcoin {
             AccountMeta(mintPda(), writable: true),
             AccountMeta(proofPda(me), writable: true),
             AccountMeta(ataPda(me), writable: true),
+            AccountMeta(treasuryPda()),
+            AccountMeta(treasuryAtaPda(), writable: true),
             AccountMeta(Pubkey(base58: Frankcoin.tokenProgram)!),
             AccountMeta(Pubkey(base58: Frankcoin.ataProgram)!),
             AccountMeta(Pubkey(base58: Frankcoin.systemProgram)!),

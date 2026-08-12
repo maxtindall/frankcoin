@@ -35,6 +35,22 @@ pub struct Mine<'info> {
     )]
     pub miner_ata: Account<'info, TokenAccount>,
 
+    /// CHECK: the PDA that owns the DAO treasury. It has no private key, so the
+    /// franks routed here can only leave via a governance-gated instruction —
+    /// spending is by 0state proposal and vote. Seeds enforce the address.
+    #[account(seeds = [TREASURY_SEED], bump)]
+    pub treasury: UncheckedAccount<'info>,
+
+    /// The DAO treasury's token account. 10% of every reward is minted here,
+    /// automatically and unavoidably, direct from mining.
+    #[account(
+        init_if_needed,
+        payer = miner,
+        associated_token::mint = mint,
+        associated_token::authority = treasury
+    )]
+    pub treasury_ata: Account<'info, TokenAccount>,
+
     pub token_program: Program<'info, Token>,
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub system_program: Program<'info, System>,
@@ -78,7 +94,13 @@ pub fn handler(ctx: Context<Mine>, nonce: u64) -> Result<()> {
     let reward = reward_for(total_minted).min(remaining);
     require!(reward > 0, FrankError::FullyMined);
 
-    // 5. Mint to the miner, signed by the config PDA (the mint authority).
+    // 5. Split the reward: 10% to the DAO treasury, the rest to the miner. The
+    //    levy is taken direct from mining, hardcoded, for the furtherance of
+    //    0state's goals; it is spent only by proposal and vote. Integer division
+    //    rounds the treasury cut down, so the miner keeps any remainder.
+    let dao_cut = reward / TREASURY_BPS_DIVISOR; // reward / 10 = 10%
+    let miner_cut = reward - dao_cut;
+
     let signer: &[&[&[u8]]] = &[&[CONFIG_SEED, &[authority_bump]]];
     token::mint_to(
         CpiContext::new_with_signer(
@@ -90,8 +112,22 @@ pub fn handler(ctx: Context<Mine>, nonce: u64) -> Result<()> {
             },
             signer,
         ),
-        reward,
+        miner_cut,
     )?;
+    if dao_cut > 0 {
+        token::mint_to(
+            CpiContext::new_with_signer(
+                ctx.accounts.token_program.key(),
+                MintTo {
+                    mint: ctx.accounts.mint.to_account_info(),
+                    to: ctx.accounts.treasury_ata.to_account_info(),
+                    authority: ctx.accounts.config.to_account_info(),
+                },
+                signer,
+            ),
+            dao_cut,
+        )?;
+    }
 
     // 6. Update state.
     let cfg = &mut ctx.accounts.config;

@@ -18,6 +18,12 @@ pub const INITIAL_REWARD: u64 = 500 * ONE_FRANK;
 pub const CONFIG_SEED: &[u8] = b"config";
 pub const MINT_SEED: &[u8] = b"mint";
 pub const PROOF_SEED: &[u8] = b"proof";
+pub const TREASURY_SEED: &[u8] = b"treasury";
+
+/// The DAO levy: 1 frank in every 10 mined is routed to the treasury. The
+/// reward is divided by this to get the treasury's cut (10 = 10%). Spent only
+/// by 0state proposal and vote.
+pub const TREASURY_BPS_DIVISOR: u64 = 10;
 
 /// Unused tail on every Proof account. Rent on this is the cost of an extra
 /// mining identity — the only defence against one fast machine farming many

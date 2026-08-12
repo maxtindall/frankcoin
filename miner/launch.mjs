@@ -26,10 +26,12 @@ const config = pda([Buffer.from('config')]);
 const mint = pda([Buffer.from('mint')]);
 const proof = pda([Buffer.from('proof'), me.toBuffer()]);
 const ata = PublicKey.findProgramAddressSync([me.toBuffer(), TOKEN.toBuffer(), mint.toBuffer()], ATA_PROG)[0];
+const treasury = pda([Buffer.from('treasury')]);
+const treasuryAta = PublicKey.findProgramAddressSync([treasury.toBuffer(), TOKEN.toBuffer(), mint.toBuffer()], ATA_PROG)[0];
 
 function lzb(bytes){let z=0;for(const b of bytes){if(b===0)z+=8;else{z+=Math.clz32(b)-24;break;}}return z;}
-function grind(challenge){const head=Buffer.concat([challenge, me.toBuffer()]);const n=Buffer.alloc(8);
-  for(let i=0n;;i++){n.writeBigUInt64LE(i);const h=Buffer.from(keccak256.arrayBuffer(Buffer.concat([head,n])));if(lzb(h)>=DIFFICULTY)return i;}}
+function grind(challenge, difficulty){const head=Buffer.concat([challenge, me.toBuffer()]);const n=Buffer.alloc(8);
+  for(let i=0n;;i++){n.writeBigUInt64LE(i);const h=Buffer.from(keccak256.arrayBuffer(Buffer.concat([head,n])));if(lzb(h)>=difficulty)return i;}}
 
 async function main(){
   console.log('program', PROGRAM_ID.toBase58());
@@ -50,13 +52,25 @@ async function main(){
     console.log('REGISTER ok  sig', sig);
   } catch(e){ console.log('register:', String(e.message||e).slice(0,100)); }
 
+  // Read difficulty/cooldown from the ACTUAL on-chain config. If genesis
+  // already ran (config exists), the live difficulty can differ from the
+  // DIFFICULTY env — grinding to the env value then produces proofs the
+  // program rejects with InsufficientDifficulty. Always grind to the real one.
+  const liveCfg = await program.account.config.fetch(config);
+  const difficulty = liveCfg.difficulty;
+  const cooldown = liveCfg.cooldown.toNumber?.() ?? Number(liveCfg.cooldown);
+  if (difficulty !== DIFFICULTY)
+    console.log(`note: on-chain difficulty is ${difficulty} (env DIFFICULTY=${DIFFICULTY}); grinding to ${difficulty}`);
+
   const pr = await program.account.proof.fetch(proof);
-  console.log('grinding difficulty', DIFFICULTY, '...');
+  const wait = Number(pr.lastClaimTs) + cooldown - Math.floor(Date.now() / 1000);
+  if (wait > 0) { console.log(`cooldown: ${wait}s left since last claim — waiting...`); await new Promise(r => setTimeout(r, wait * 1000 + 1000)); }
+  console.log('grinding difficulty', difficulty, '...');
   const t0 = Date.now();
-  const nonce = grind(Buffer.from(pr.challenge));
+  const nonce = grind(Buffer.from(pr.challenge), difficulty);
   console.log('found nonce', nonce.toString(), 'in', ((Date.now()-t0)/1000).toFixed(1)+'s');
   const sig = await program.methods.mine(new anchor.BN(nonce.toString())).accounts({
-    miner: me, config, mint, proof, minerAta: ata,
+    miner: me, config, mint, proof, minerAta: ata, treasury, treasuryAta,
     tokenProgram: TOKEN, associatedTokenProgram: ATA_PROG, systemProgram: SystemProgram.programId }).rpc();
   console.log('FIRST MINE ok  sig', sig);
   const bal = await conn.getTokenAccountBalance(ata);
