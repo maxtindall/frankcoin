@@ -1,8 +1,9 @@
 use anchor_lang::prelude::*;
-use crate::{constants::*, error::DaoError, state::{Dao, Citizen, Proposal}};
+use frankcoin::state::Proof;
+use crate::{constants::*, error::DaoError, state::{Dao, Proposal}};
 
-/// Put a question to the citizens. Any citizen may propose — proposing is
-/// itself an equal right, not something reserved to a proposer class.
+/// Put a question to the membership. Members only — membership is automatic:
+/// the proposer's frankcoin Proof (having mined) is the qualification.
 #[derive(Accounts)]
 pub struct Propose<'info> {
     #[account(mut)]
@@ -11,12 +12,14 @@ pub struct Propose<'info> {
     #[account(mut, seeds = [DAO_SEED], bump = dao.bump)]
     pub dao: Account<'info, Dao>,
 
-    /// Only a citizen may propose. The seed ties the citizenship to the signer.
+    /// The proposer's frankcoin Proof — proof of membership (having mined).
     #[account(
-        seeds = [CITIZEN_SEED, proposer.key().as_ref()],
-        bump = citizen.bump,
+        seeds = [frankcoin::constants::PROOF_SEED, proposer.key().as_ref()],
+        bump = proof.bump,
+        seeds::program = FRANKCOIN_PROGRAM,
+        constraint = proof.miner == proposer.key() @ DaoError::ProofOwnerMismatch,
     )]
-    pub citizen: Account<'info, Citizen>,
+    pub proof: Account<'info, Proof>,
 
     #[account(
         init,
@@ -30,8 +33,15 @@ pub struct Propose<'info> {
     pub system_program: Program<'info, System>,
 }
 
-pub fn handler(ctx: Context<Propose>, title: String, body_hash: [u8; 32]) -> Result<()> {
+pub fn handler(
+    ctx: Context<Propose>,
+    title: String,
+    body_hash: [u8; 32],
+    spend_recipient: Pubkey,
+    spend_amount: u64,
+) -> Result<()> {
     require!(title.len() <= MAX_TITLE_LEN, DaoError::TitleTooLong);
+    require!(ctx.accounts.proof.count >= MIN_PROOFS_TO_JOIN, DaoError::InsufficientLabour);
 
     let clock = Clock::get()?;
     let dao = &mut ctx.accounts.dao;
@@ -46,9 +56,9 @@ pub fn handler(ctx: Context<Propose>, title: String, body_hash: [u8; 32]) -> Res
     p.yes = 0;
     p.no = 0;
     p.abstain = 0;
-    // Fix the electorate at the moment the question opens, so quorum/turnout has
-    // a stable denominator regardless of who is admitted or revoked later.
-    p.electorate_at_open = dao.citizen_count;
+    p.electorate_at_open = dao.member_count;
+    p.spend_recipient = spend_recipient;
+    p.spend_amount = spend_amount;
 
     dao.proposal_count += 1;
     Ok(())

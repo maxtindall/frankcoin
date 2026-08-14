@@ -4,7 +4,7 @@ use anchor_lang::prelude::*;
 pub enum DaoError {
     #[msg("that Proof account is not owned by the frankcoin program")]
     NotAFrankcoinProof,
-    #[msg("this wallet has not mined enough to become a citizen")]
+    #[msg("this wallet has not mined enough to join")]
     InsufficientLabour,
     #[msg("the proof account does not belong to this wallet")]
     ProofOwnerMismatch,
@@ -12,12 +12,6 @@ pub enum DaoError {
     TitleTooLong,
     #[msg("voting on this proposal has closed")]
     VotingClosed,
-    #[msg("voting on this proposal is still open")]
-    VotingOpen,
     #[msg("invalid vote choice")]
     BadChoice,
-    #[msg("only the admit authority may do that")]
-    NotTheAuthority,
-    #[msg("only the nominated pending authority may accept the handover")]
-    NotThePendingAuthority,
 }

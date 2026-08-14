@@ -26,3 +26,15 @@ pub struct Proof {
     pub count: u64,
     pub bump: u8,
 }
+
+/// A spent-marker for a treasury withdrawal. One per 0state proposal; its
+/// existence (created on withdrawal) prevents a passed spending proposal from
+/// being executed more than once.
+#[account]
+#[derive(InitSpace)]
+pub struct Spent {
+    pub bump: u8,
+    pub proposal: Pubkey,
+    pub amount: u64,
+    pub ts: i64,
+}

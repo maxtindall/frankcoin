@@ -9,57 +9,46 @@ pub use constants::*;
 pub use instructions::*;
 pub use state::*;
 
-declare_id!("CcEbfypSNbA1YKPsW7PVLRQzzEnKKMcPXBL7CxDW9Joz");
+declare_id!("BPu5i6U3T69a16TY62J2HBWk7DJMHrU4UHH1Z1GCGmY9");
 
-/// 0state DAO — communist, proof-of-mine governance.
+/// 0state — an autonomous organization governed by the miners of frankcoin.
 ///
-/// A closed commune. Members are admitted by a trusted authority and must
-/// have mined frankcoin to be eligible. Once inside: one member, one vote. The
-/// franchise reads the Proof account, never a token balance, so a vote is earned
-/// by labour and admission, not bought. Every citizen is equal and proposing is
-/// an equal right; only the door (admit / remove) is an unequal, trusted power.
+/// franks are a currency: earned, held, and freely traded. The franchise is
+/// something else. Membership is acquired only by MINING and is non-transferable,
+/// so no accumulation of capital can acquire control of the organization. Money
+/// and the vote are held separately.
 ///
-/// This program is the VOTING layer only. It holds no funds and custodies
-/// nothing. Any real assets a 0state entity controls must live behind a
-/// separate multisig / legal wrapper that treats these votes as its mandate —
-/// never inside this program.
+/// Membership is automatic — having mined frankcoin (a Proof account) is the
+/// entire qualification; there is no join step and no admitting authority.
+/// Voting weight reflects a member's mining, tempered sub-linearly and decaying
+/// with inactivity, so influence tracks recent labour, not wealth. Proposals are
+/// decided first past the post. This program is the VOTING layer only; it holds
+/// no funds.
 #[program]
 pub mod zerostate {
     use super::*;
 
-    /// Found the DAO. Once.
+    /// Found the organization. Once.
     pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
         instructions::initialize::handler(ctx)
     }
 
-    /// Admit a member. Trusted-authority act; mining is the floor.
-    pub fn admit(ctx: Context<Admit>) -> Result<()> {
-        instructions::admit::handler(ctx)
+    /// Put a question to the membership. Members only. For an ordinary proposal
+    /// pass a default recipient and amount 0; for a spending proposal pass the
+    /// treasury recipient and amount — if it passes, anyone may execute the
+    /// frankcoin `treasury_withdraw` it authorizes.
+    pub fn propose(
+        ctx: Context<Propose>,
+        title: String,
+        body_hash: [u8; 32],
+        spend_recipient: Pubkey,
+        spend_amount: u64,
+    ) -> Result<()> {
+        instructions::propose::handler(ctx, title, body_hash, spend_recipient, spend_amount)
     }
 
-    /// Remove a member. Trust withdrawn.
-    pub fn revoke(ctx: Context<Revoke>) -> Result<()> {
-        instructions::revoke::handler(ctx)
-    }
-
-    /// Nominate a successor authority (step one of a two-step handover). Records
-    /// a pending key; grants no power until that key accepts.
-    pub fn nominate_authority(ctx: Context<NominateAuthority>) -> Result<()> {
-        instructions::nominate_authority::handler(ctx)
-    }
-
-    /// Accept the nominated authority (step two). Signed by the nominee itself,
-    /// so a handover to a mistyped/unsignable key can never brick the door.
-    pub fn accept_authority(ctx: Context<AcceptAuthority>) -> Result<()> {
-        instructions::accept_authority::handler(ctx)
-    }
-
-    /// Put a question to the citizens.
-    pub fn propose(ctx: Context<Propose>, title: String, body_hash: [u8; 32]) -> Result<()> {
-        instructions::propose::handler(ctx, title, body_hash)
-    }
-
-    /// Cast one vote: 0 no, 1 yes, 2 abstain.
+    /// Cast a vote: 0 no, 1 yes, 2 abstain. Weight is derived from the member's
+    /// (decaying) mining, read live from their frankcoin Proof.
     pub fn vote(ctx: Context<Vote>, choice: u8) -> Result<()> {
         instructions::vote::handler(ctx, choice)
     }

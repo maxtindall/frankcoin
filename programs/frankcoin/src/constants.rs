@@ -19,11 +19,21 @@ pub const CONFIG_SEED: &[u8] = b"config";
 pub const MINT_SEED: &[u8] = b"mint";
 pub const PROOF_SEED: &[u8] = b"proof";
 pub const TREASURY_SEED: &[u8] = b"treasury";
+pub const SPENT_SEED: &[u8] = b"spent";
 
 /// The DAO levy: 1 frank in every 10 mined is routed to the treasury. The
 /// reward is divided by this to get the treasury's cut (10 = 10%). Spent only
 /// by 0state proposal and vote.
 pub const TREASURY_BPS_DIVISOR: u64 = 10;
+
+/// The 0state governance program. The treasury can only be spent by executing a
+/// passed spending proposal owned by this program.
+pub const ZEROSTATE_PROGRAM: Pubkey = pubkey!("BPu5i6U3T69a16TY62J2HBWk7DJMHrU4UHH1Z1GCGmY9");
+
+/// Anchor's 8-byte account discriminator for a 0state `Proposal`. Used to verify
+/// a supplied account really is a proposal before decoding it by hand (frankcoin
+/// avoids a code dependency on zerostate to keep the two programs decoupled).
+pub const PROPOSAL_DISCRIMINATOR: [u8; 8] = [26, 94, 189, 187, 116, 136, 53, 33];
 
 /// Unused tail on every Proof account. Rent on this is the cost of an extra
 /// mining identity — the only defence against one fast machine farming many

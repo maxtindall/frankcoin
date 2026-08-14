@@ -42,4 +42,11 @@ pub mod frankcoin {
     pub fn create_metadata(ctx: Context<CreateMetadata>, name: String, symbol: String, uri: String) -> Result<()> {
         instructions::create_metadata::handler(ctx, name, symbol, uri)
     }
+
+    /// Execute a treasury spend authorized by a passed 0state proposal. Moves
+    /// the proposal's fixed amount to its fixed recipient, signed by the treasury
+    /// PDA; permissionless but single-use per proposal.
+    pub fn treasury_withdraw(ctx: Context<TreasuryWithdraw>) -> Result<()> {
+        instructions::treasury_withdraw::handler(ctx)
+    }
 }
