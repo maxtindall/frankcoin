@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>frankcoin — roadmap</title>
+<meta name="description" content="frankcoin's road from a mined devnet memecoin to a publicly traded one — audit, mainnet genesis, liquidity, discoverability. Honest about the trade-offs.">
+<style>
+  :root{
+    --black:#000; --green:#35ff6a; --green-2:#2ad257; --dim:#199c3f;
+    --faint:#0d5222; --red:#ff4444; --bright:#c6ffd8; --rule:rgba(53,255,106,.22);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;
+    font-family:"Courier New",ui-monospace,SFMono-Regular,Menlo,monospace}
+  html{-webkit-text-size-adjust:100%}
+  body{background:var(--black);color:var(--green);line-height:1.5;
+       padding:34px 18px 90px;overflow-x:hidden;font-size:14px;letter-spacing:.2px}
+  body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:9;
+    background:repeating-linear-gradient(180deg,rgba(0,0,0,0) 0,rgba(0,0,0,0) 2px,rgba(0,0,0,.20) 3px,rgba(0,0,0,.20) 4px)}
+  body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:8;
+    background:radial-gradient(ellipse at center,rgba(0,0,0,0) 55%,rgba(0,0,0,.5) 100%)}
+  .sheet{max-width:80ch;margin:0 auto;position:relative;z-index:1}
+
+  .top{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:10px;
+    border-bottom:1px solid var(--rule);padding-bottom:12px}
+  .top h1{font-size:clamp(22px,6vw,34px);letter-spacing:2px;color:var(--green);
+    text-shadow:0 0 12px rgba(53,255,106,.45)}
+  .top a{color:var(--green-2);text-decoration:none;font-size:12px;letter-spacing:1px;
+    border:1px solid var(--rule);border-radius:3px;padding:6px 11px}
+  .top a:hover{color:var(--green);border-color:var(--green);box-shadow:0 0 12px rgba(53,255,106,.25)}
+  .intro{color:var(--green-2);font-size:13px;margin-top:16px;max-width:70ch}
+
+  /* legend */
+  .legend{display:flex;gap:18px;flex-wrap:wrap;margin-top:20px;font-size:11.5px;color:var(--dim);letter-spacing:.5px}
+  .legend b{font-weight:normal}
+  .k-done{color:var(--green)} .k-now{color:var(--bright)} .k-next{color:var(--green-2)} .k-later{color:var(--faint)}
+
+  /* phases */
+  .phase{border:1px solid var(--rule);background:rgba(53,255,106,.02);margin-top:20px;padding:16px 18px}
+  .phase.now{border-color:rgba(198,255,216,.4);background:rgba(53,255,106,.04)}
+  .ph-head{display:flex;gap:12px;align-items:baseline;justify-content:space-between;flex-wrap:wrap}
+  .ph-title{font-size:15px;letter-spacing:1px;color:var(--green);text-shadow:0 0 8px rgba(53,255,106,.3)}
+  .ph-title .n{color:var(--faint);margin-right:8px}
+  .tag{font-size:10.5px;letter-spacing:1.5px;text-transform:uppercase;padding:2px 8px;border:1px solid currentColor;border-radius:2px;white-space:nowrap}
+  .tag.done{color:var(--green)} .tag.now{color:var(--bright)} .tag.next{color:var(--green-2)} .tag.later{color:var(--faint)}
+  .ph-body{margin-top:12px}
+  ul{list-style:none;display:flex;flex-direction:column;gap:7px;max-width:74ch}
+  li{padding-left:24px;position:relative;font-size:13px}
+  li .m{position:absolute;left:0;top:0}
+  li.d .m{color:var(--green)}  li.d{color:var(--green-2)}
+  li.o .m{color:var(--bright)} li.o{color:var(--bright)}
+  li.p .m{color:var(--faint)}  li.p{color:var(--dim)}
+  li b{color:var(--bright);font-weight:normal}
+
+  .note{border:1px solid rgba(255,68,68,.3);background:rgba(255,68,68,.04);padding:14px 16px;margin-top:26px;max-width:76ch}
+  .note h3{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--red);margin-bottom:10px}
+  .note p{font-size:12.5px;color:var(--green-2);margin-bottom:9px;line-height:1.6}
+  .note p:last-child{margin-bottom:0}
+  .note b{color:var(--red);font-weight:normal}
+
+  footer{margin-top:34px;padding-top:14px;border-top:1px solid var(--rule);
+    color:var(--faint);font-size:11px;letter-spacing:.7px;line-height:1.9}
+  @media (prefers-reduced-motion:reduce){body::before{display:none}}
+</style>
+</head>
+<body>
+<div class="sheet">
+
+  <div class="top">
+    <h1>ROADMAP</h1>
+    <a href="../">&larr; frankcoin</a>
+  </div>
+  <p class="intro">The road from a mined devnet memecoin to one anyone can trade. Permissionless by design — no listing committee, just work, an audit, and liquidity. Honest about the trade-offs at the end.</p>
+
+  <div class="legend">
+    <span class="k-done">▓ done</span>
+    <span class="k-now">▓ in progress</span>
+    <span class="k-next">░ next</span>
+    <span class="k-later">░ later</span>
+  </div>
+
+  <div class="phase">
+    <div class="ph-head"><div class="ph-title"><span class="n">00</span>Genesis on devnet</div><span class="tag done">done</span></div>
+    <div class="ph-body"><ul>
+      <li class="d"><span class="m">▓</span> Proof-of-work mint, uncapped with a perpetual tail — no admin inflation</li>
+      <li class="d"><span class="m">▓</span> The <b>General Secretary</b>: bounded steward, cannot mint after genesis, touch a balance, or seize the mint</li>
+      <li class="d"><span class="m">▓</span> CLI + Mac miner shipped via Homebrew; <b>brew upgrade</b> path proven</li>
+      <li class="d"><span class="m">▓</span> On-chain token metadata (name / symbol / logo)</li>
+    </ul></div>
+  </div>
+
+  <div class="phase now">
+    <div class="ph-head"><div class="ph-title"><span class="n">01</span>Harden for real value</div><span class="tag now">in progress</span></div>
+    <div class="ph-body"><ul>
+      <li class="o"><span class="m">▓</span> Settle the <b>emission rate</b> — uncapped mining is constant new supply; tune difficulty/tail so a market can hold (see caution below)</li>
+      <li class="p"><span class="m">░</span> Independent <b>security audit</b> of the program (mainnet is gated on this)</li>
+      <li class="p"><span class="m">░</span> Freeze the token identity: mark metadata immutable</li>
+      <li class="p"><span class="m">░</span> Confirm & publish the trust guarantees (no freeze authority, PDA mint authority, no post-genesis mint)</li>
+    </ul></div>
+  </div>
+
+  <div class="phase">
+    <div class="ph-head"><div class="ph-title"><span class="n">02</span>Mainnet genesis</div><span class="tag next">next</span></div>
+    <div class="ph-body"><ul>
+      <li class="p"><span class="m">░</span> Deploy the program to <b>Solana mainnet</b>; initialize; create + freeze metadata</li>
+      <li class="p"><span class="m">░</span> Open mining to the public on mainnet</li>
+      <li class="p"><span class="m">░</span> Publish the reproducible build so anyone can verify the deployed bytecode</li>
+    </ul></div>
+  </div>
+
+  <div class="phase">
+    <div class="ph-head"><div class="ph-title"><span class="n">03</span>Liquidity — the actual "listing"</div><span class="tag next">next</span></div>
+    <div class="ph-body"><ul>
+      <li class="p"><span class="m">░</span> Mine an initial float; hold SOL / USDC for the pair</li>
+      <li class="p"><span class="m">░</span> Create a <b>Raydium</b> (or Orca) pool: frankcoin / SOL — the deposit ratio sets the opening price</li>
+      <li class="p"><span class="m">░</span> Seed and, where sensible, lock initial liquidity</li>
+      <li class="p"><span class="m">░</span> Note: not Uniswap / PancakeSwap (EVM chains) and not pump.fun (mints its own fixed-supply token) — frankcoin is a mined Solana SPL token, so a Solana AMM pool is the path</li>
+    </ul></div>
+  </div>
+
+  <div class="phase">
+    <div class="ph-head"><div class="ph-title"><span class="n">04</span>Discoverability</div><span class="tag later">later</span></div>
+    <div class="ph-body"><ul>
+      <li class="p"><span class="m">░</span> Auto-indexed by <b>Jupiter</b>, DexScreener, Birdeye once the pool exists</li>
+      <li class="p"><span class="m">░</span> Submit logo + info to CoinGecko / CoinMarketCap</li>
+      <li class="p"><span class="m">░</span> Verified token list entries</li>
+    </ul></div>
+  </div>
+
+  <div class="phase">
+    <div class="ph-head"><div class="ph-title"><span class="n">05</span>Stewardship, in the open</div><span class="tag later">later</span></div>
+    <div class="ph-body"><ul>
+      <li class="p"><span class="m">░</span> The General Secretary curates identity and tunes pace within the code's hard bounds — nothing more</li>
+      <li class="p"><span class="m">░</span> Everything on the public ledger; the whole program readable</li>
+    </ul></div>
+  </div>
+
+  <div class="note">
+    <h3>Honest cautions</h3>
+    <p><b>Uncapped mining fights a stable market.</b> Every proof mints new supply — constant sell-pressure and dilution. Most tradeable memecoins are fixed-supply for this reason. The Dogecoin-style tail and a deep pool are in tension; the emission rate is a real design decision, not a detail.</p>
+    <p><b>This is real money and real exposure.</b> Providing liquidity commits capital at market risk. A public tradeable token carries securities and regulatory questions that need real counsel. Today frankcoin is on <b>devnet — worth nothing</b>. Nothing here is an offer, a sale, a security, or financial advice.</p>
+  </div>
+
+  <footer>
+    max tindall inc &middot; frankcoin &middot; mined, freely traded, led by the General Secretary<br>
+    a plan, not a promise &middot; timelines are intentions, not commitments
+  </footer>
+
+</div>
+</body>
+</html>
