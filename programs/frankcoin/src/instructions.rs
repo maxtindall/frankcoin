@@ -6,7 +6,6 @@ pub mod initialize;
 pub mod migrate;
 pub mod mine;
 pub mod register;
-pub mod treasury_withdraw;
 
 pub use create_metadata::*;
 pub use gensec_genesis_mint::*;
@@ -16,4 +15,3 @@ pub use initialize::*;
 pub use migrate::*;
 pub use mine::*;
 pub use register::*;
-pub use treasury_withdraw::*;
