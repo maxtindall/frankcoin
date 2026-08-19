@@ -39,11 +39,8 @@ const mint = pda([Buffer.from('mint')]);
 const proof = pda([Buffer.from('proof'), me.toBuffer()]);
 const ata = PublicKey.findProgramAddressSync(
   [me.toBuffer(), TOKEN.toBuffer(), mint.toBuffer()], ATA_PROG)[0];
-// DAO treasury: a program PDA and its token account. 10% of every reward is
-// minted here automatically; the miner must pass both accounts.
-const treasury = pda([Buffer.from('treasury')]);
-const treasuryAta = PublicKey.findProgramAddressSync(
-  [treasury.toBuffer(), TOKEN.toBuffer(), mint.toBuffer()], ATA_PROG)[0];
+// frankcoin is a memecoin now: no treasury, no levy. Every mined frank goes to
+// the miner, so `mine` takes only the miner's own accounts.
 
 // keccak(challenge || miner || nonce_le) -> leading zero bits
 function leadingZeroBits(bytes) {
@@ -110,7 +107,7 @@ async function main() {
     process.stdout.write(`found nonce ${nonce} in ${((Date.now() - t0) / 1000).toFixed(1)}s — submitting... `);
     try {
       const sig = await program.methods.mine(new anchor.BN(nonce.toString())).accounts({
-        miner: me, config, mint, proof, minerAta: ata, treasury, treasuryAta,
+        miner: me, config, mint, proof, minerAta: ata,
         tokenProgram: TOKEN, associatedTokenProgram: ATA_PROG, systemProgram: SystemProgram.programId,
       }).rpc();
       mined++;

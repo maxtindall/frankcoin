@@ -7,19 +7,31 @@
     "description": "Created with Anchor"
   },
   "docs": [
-    "frankcoin — a proof-of-work currency for the open bot project.",
-    "Denominated in FRANKS. Fully mined from zero, 100,000,000 cap, no pre-mint,",
-    "no admin inflation. The program itself is the only issuer."
+    "frankcoin — a proof-of-work **memecoin**, denominated in franks, governed by",
+    "the **General Secretary**.",
+    "",
+    "Mined from zero and freely traded: franks come from proof-of-work via `mine`,",
+    "plus a single one-time genesis mint the founding General Secretary performs in the open —",
+    "after which `genesis_minted` latches and the mint is proof-of-work only,",
+    "forever. Uncapped, with a decaying reward that floors at a perpetual tail, so",
+    "percentage inflation trends to zero while mining never stops.",
+    "",
+    "The General Secretary is the paramount servant of the coin, bound absolutely",
+    "by the Party line — and here the Party is the code. Democratic centralism,",
+    "enforced in bytecode: the Secretary may curate the coin's identity, tune the",
+    "mine's pace within hard bounds, pause mining in an emergency, and pass the",
+    "office to a successor. The Secretary may **never** mint after genesis,",
+    "**never** touch a holder's balance, and **never** reassign the mint authority",
+    "away from this program. Those are not promises; they are the absence of any",
+    "instruction that could do otherwise. No cult of personality outlives the code."
   ],
   "instructions": [
     {
       "name": "create_metadata",
       "docs": [
-        "One-time: attach Metaplex token metadata (name/symbol/uri) to the mint so",
-        "explorers show \"frankcoin\" instead of a generic SPL token. The program",
-        "signs as its own mint authority (config PDA); gated to the upgrade",
-        "authority so the identity can't be front-run. Created mutable, to be",
-        "frozen at mainnet."
+        "Curate the token's Metaplex identity (name/symbol/uri). A curatorial act",
+        "of the General Secretary — it can never mint or move a balance. The program signs as",
+        "its own mint authority (config PDA)."
       ],
       "discriminator": [
         30,
@@ -33,9 +45,12 @@
       ],
       "accounts": [
         {
-          "name": "payer",
+          "name": "general_secretary",
           "writable": true,
-          "signer": true
+          "signer": true,
+          "relations": [
+            "config"
+          ]
         },
         {
           "name": "config",
@@ -85,13 +100,6 @@
           ]
         },
         {
-          "name": "program",
-          "address": "61yBp4FQSXq6qxS1Scny8LRBNDLDoNQBKupofVSyyHL8"
-        },
-        {
-          "name": "program_data"
-        },
-        {
           "name": "token_metadata_program",
           "address": "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"
         },
@@ -120,10 +128,347 @@
       ]
     },
     {
+      "name": "gensec_genesis_mint",
+      "docs": [
+        "The General Secretary's one and only mint: a single founder allocation, performed once,",
+        "after which the mint is proof-of-work only forever. General Secretary-gated."
+      ],
+      "discriminator": [
+        110,
+        161,
+        168,
+        25,
+        69,
+        41,
+        243,
+        217
+      ],
+      "accounts": [
+        {
+          "name": "general_secretary",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "config"
+          ]
+        },
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "mint",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  105,
+                  110,
+                  116
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "recipient",
+          "docs": [
+            "is used, to derive the destination ATA."
+          ]
+        },
+        {
+          "name": "recipient_ata",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "recipient"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  6,
+                  221,
+                  246,
+                  225,
+                  215,
+                  101,
+                  161,
+                  147,
+                  217,
+                  203,
+                  225,
+                  70,
+                  206,
+                  235,
+                  121,
+                  172,
+                  28,
+                  180,
+                  133,
+                  237,
+                  95,
+                  91,
+                  55,
+                  145,
+                  58,
+                  140,
+                  245,
+                  133,
+                  126,
+                  255,
+                  0,
+                  169
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "associated_token_program",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "gensec_set_params",
+      "docs": [
+        "Tune the mine's pace — cooldown, target seconds/proof, retarget window —",
+        "each clamped to a hard-coded range. General Secretary-gated."
+      ],
+      "discriminator": [
+        98,
+        75,
+        78,
+        98,
+        127,
+        35,
+        60,
+        83
+      ],
+      "accounts": [
+        {
+          "name": "general_secretary",
+          "signer": true,
+          "relations": [
+            "config"
+          ]
+        },
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "cooldown",
+          "type": "i64"
+        },
+        {
+          "name": "target_interval",
+          "type": "i64"
+        },
+        {
+          "name": "retarget_interval",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "gensec_set_paused",
+      "docs": [
+        "The emergency brake: pause or resume mining. Gates issuance only. General Secretary-gated."
+      ],
+      "discriminator": [
+        99,
+        64,
+        58,
+        89,
+        166,
+        116,
+        98,
+        188
+      ],
+      "accounts": [
+        {
+          "name": "general_secretary",
+          "signer": true,
+          "relations": [
+            "config"
+          ]
+        },
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "paused",
+          "type": "bool"
+        }
+      ]
+    },
+    {
+      "name": "gensec_transfer",
+      "docs": [
+        "Pass the office to a successor. The powers are fixed by the code, so this",
+        "changes only who the General Secretary is. General Secretary-gated."
+      ],
+      "discriminator": [
+        179,
+        145,
+        5,
+        95,
+        45,
+        237,
+        58,
+        122
+      ],
+      "accounts": [
+        {
+          "name": "general_secretary",
+          "signer": true,
+          "relations": [
+            "config"
+          ]
+        },
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "new_secretary",
+          "type": "pubkey"
+        }
+      ]
+    },
+    {
       "name": "initialize",
       "docs": [
-        "Genesis. Creates the mint (authority = this program's config PDA) and",
-        "the global config. Callable once."
+        "Genesis. Creates the mint (authority = this program's config PDA) and the",
+        "global config, and installs the deployer as the founding General Secretary. Callable once."
       ],
       "discriminator": [
         175,
@@ -202,9 +547,66 @@
       ]
     },
     {
+      "name": "migrate",
+      "docs": [
+        "One-time, non-breaking upgrade of a legacy `Config` to the memecoin+General Secretary",
+        "layout. Grows the counter account and fills the new fields; no frank",
+        "moves. Upgrade-authority gated. Run once, immediately after deploying the",
+        "new program to an existing frankcoin, so mining never stops."
+      ],
+      "discriminator": [
+        155,
+        234,
+        231,
+        146,
+        236,
+        158,
+        162,
+        30
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "program",
+          "address": "61yBp4FQSXq6qxS1Scny8LRBNDLDoNQBKupofVSyyHL8"
+        },
+        {
+          "name": "program_data"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "mine",
       "docs": [
-        "Submit a proof-of-work nonce and mint the reward."
+        "Submit a proof-of-work nonce and mint the full reward to the miner."
       ],
       "discriminator": [
         59,
@@ -291,124 +693,6 @@
               {
                 "kind": "account",
                 "path": "miner"
-              },
-              {
-                "kind": "const",
-                "value": [
-                  6,
-                  221,
-                  246,
-                  225,
-                  215,
-                  101,
-                  161,
-                  147,
-                  217,
-                  203,
-                  225,
-                  70,
-                  206,
-                  235,
-                  121,
-                  172,
-                  28,
-                  180,
-                  133,
-                  237,
-                  95,
-                  91,
-                  55,
-                  145,
-                  58,
-                  140,
-                  245,
-                  133,
-                  126,
-                  255,
-                  0,
-                  169
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "mint"
-              }
-            ],
-            "program": {
-              "kind": "const",
-              "value": [
-                140,
-                151,
-                37,
-                143,
-                78,
-                36,
-                137,
-                241,
-                187,
-                61,
-                16,
-                41,
-                20,
-                142,
-                13,
-                131,
-                11,
-                90,
-                19,
-                153,
-                218,
-                255,
-                16,
-                132,
-                4,
-                142,
-                123,
-                216,
-                219,
-                233,
-                248,
-                89
-              ]
-            }
-          }
-        },
-        {
-          "name": "treasury",
-          "docs": [
-            "franks routed here can only leave via a governance-gated instruction —",
-            "spending is by 0state proposal and vote. Seeds enforce the address."
-          ],
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  116,
-                  114,
-                  101,
-                  97,
-                  115,
-                  117,
-                  114,
-                  121
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "name": "treasury_ata",
-          "docs": [
-            "The DAO treasury's token account. 10% of every reward is minted here,",
-            "automatically and unavoidably, direct from mining."
-          ],
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "account",
-                "path": "treasury"
               },
               {
                 "kind": "const",
@@ -611,28 +895,48 @@
   "errors": [
     {
       "code": 6000,
-      "name": "FullyMined",
-      "msg": "frankcoin is fully mined; the 100,000,000 cap has been reached"
-    },
-    {
-      "code": 6001,
       "name": "InsufficientDifficulty",
       "msg": "proof does not meet the required difficulty"
     },
     {
-      "code": 6002,
+      "code": 6001,
       "name": "Cooldown",
       "msg": "cooldown has not elapsed since your last claim"
     },
     {
-      "code": 6003,
+      "code": 6002,
       "name": "Overflow",
       "msg": "arithmetic overflow"
     },
     {
+      "code": 6003,
+      "name": "NotTheSecretary",
+      "msg": "only the sitting General Secretary may perform this act"
+    },
+    {
       "code": 6004,
+      "name": "GenesisAlreadyMinted",
+      "msg": "the one-time genesis mint has already been performed; franks are now proof-of-work only"
+    },
+    {
+      "code": 6005,
+      "name": "MiningPaused",
+      "msg": "mining is paused by the General Secretary"
+    },
+    {
+      "code": 6006,
+      "name": "ParamOutOfBounds",
+      "msg": "that parameter is outside the bounds the code permits the General Secretary"
+    },
+    {
+      "code": 6007,
       "name": "NotUpgradeAuthority",
-      "msg": "only the program's upgrade authority may set token metadata"
+      "msg": "only the program's upgrade authority may migrate the config"
+    },
+    {
+      "code": 6008,
+      "name": "AlreadyMigrated",
+      "msg": "the config account is already migrated to the current layout"
     }
   ],
   "types": [
@@ -640,7 +944,9 @@
       "name": "Config",
       "docs": [
         "Global state. The config PDA is also the token's mint authority — no wallet",
-        "can mint by signing; only this program, via the `mine` proof-of-work path."
+        "can mint by signing; new franks come only from the `mine` proof-of-work path",
+        "(plus the General Secretary's single, one-time genesis mint, after which `genesis_minted`",
+        "latches true forever and even the General Secretary can never mint again)."
       ],
       "type": {
         "kind": "struct",
@@ -676,6 +982,64 @@
           {
             "name": "proofs_accepted",
             "type": "u64"
+          },
+          {
+            "name": "target_interval",
+            "type": "i64"
+          },
+          {
+            "name": "retarget_interval",
+            "type": "u64"
+          },
+          {
+            "name": "window_start_ts",
+            "type": "i64"
+          },
+          {
+            "name": "window_start_proofs",
+            "type": "u64"
+          },
+          {
+            "name": "min_difficulty",
+            "type": "u8"
+          },
+          {
+            "name": "general_secretary",
+            "docs": [
+              "The sitting General Secretary. A constrained steward: may curate the token's identity,",
+              "tune the mine's pace within hard bounds, pause mining in emergency, and",
+              "pass the office on. May NEVER mint after genesis, NEVER touch a holder's",
+              "balance, and NEVER reassign the mint authority away from this program."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "genesis_minted",
+            "docs": [
+              "Latches true the instant the General Secretary's one-time genesis mint executes. Once",
+              "set, no code path — not even the General Secretary — can mint outside proof-of-work."
+            ],
+            "type": "bool"
+          },
+          {
+            "name": "paused",
+            "docs": [
+              "Emergency brake. While true, `mine` refuses new proofs. The General Secretary alone",
+              "may set or clear it; it gates issuance only and can never move a balance."
+            ],
+            "type": "bool"
+          },
+          {
+            "name": "reserved",
+            "docs": [
+              "Forward space so future upgrades need no migration."
+            ],
+            "type": {
+              "array": [
+                "u8",
+                64
+              ]
+            }
           }
         ]
       }

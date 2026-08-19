@@ -21,7 +21,11 @@ public struct Frankcoin {
     static let ataProgram = "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
     static let systemProgram = "11111111111111111111111111111111"
     static let oneFrank: Double = 1_000_000_000
-    static let cap: UInt64 = 1_000_000_000 * 1_000_000_000
+    // NOT a cap. frankcoin is uncapped (a Dogecoin-style model): the reward
+    // halves across this distribution phase, then floors at a perpetual tail of
+    // 1 frank/proof, forever. Emission never stops.
+    static let distributionPhase: UInt64 = 1_000_000_000 * 1_000_000_000
+    static let tailReward: UInt64 = 1 * 1_000_000_000
 
     // First eight bytes of sha256("global:<name>"); fixed for the program's life.
     static let ixRegister: [UInt8] = [211, 124, 67, 15, 211, 194, 178, 240]
@@ -45,23 +49,21 @@ public struct Frankcoin {
         Pda.find([miner.bytes, Pubkey(base58: Frankcoin.tokenProgram)!.bytes, mintPda().bytes],
                  program: Pubkey(base58: Frankcoin.ataProgram)!)!.0
     }
-    // The DAO treasury: a program PDA and its token account. 10% of every reward
-    // is minted here automatically; every mine must pass both accounts.
-    public func treasuryPda() -> Pubkey { Pda.find([seeds("treasury")], program: program)!.0 }
-    public func treasuryAtaPda() -> Pubkey {
-        Pda.find([treasuryPda().bytes, Pubkey(base58: Frankcoin.tokenProgram)!.bytes, mintPda().bytes],
-                 program: Pubkey(base58: Frankcoin.ataProgram)!)!.0
-    }
-
-    /// What the next accepted proof pays. Mirrors reward_for() in the program.
+    /// What the next accepted proof pays. Mirrors reward_for() in the program:
+    /// halves each tranche across the distribution phase, then **floors at the
+    /// tail (1 frank) forever** — it never returns 0, because mining is uncapped.
     public static func reward(forTotalMinted minted: UInt64) -> Double {
-        var remaining = minted, tranche = cap / 2, reward: UInt64 = 500 * 1_000_000_000
-        while remaining >= tranche && reward > 0 {
-            remaining -= tranche
-            tranche /= 2
+        var reward: UInt64 = 500 * 1_000_000_000
+        var lo: UInt64 = 0
+        var size = distributionPhase / 2
+        while true {
+            if reward <= tailReward { return Double(tailReward) / oneFrank }
+            let hi = lo &+ size
+            if minted < hi { return Double(reward) / oneFrank }
+            lo = hi
+            size /= 2
             reward /= 2
         }
-        return Double(reward) / oneFrank
     }
 
     static func u64(_ b: [UInt8], _ at: Int) -> UInt64 {
@@ -113,14 +115,14 @@ public struct Frankcoin {
         let me = wallet.pubkey
         var data = Frankcoin.ixMine
         for i in 0..<8 { data.append(UInt8((nonce >> UInt64(8 * i)) & 0xff)) }
+        // frankcoin is a memecoin now: no treasury, no levy. Every mined frank
+        // goes to the miner, so `mine` takes only the miner's own accounts.
         let metas = [
             AccountMeta(me, signer: true, writable: true),
             AccountMeta(configPda(), writable: true),
             AccountMeta(mintPda(), writable: true),
             AccountMeta(proofPda(me), writable: true),
             AccountMeta(ataPda(me), writable: true),
-            AccountMeta(treasuryPda()),
-            AccountMeta(treasuryAtaPda(), writable: true),
             AccountMeta(Pubkey(base58: Frankcoin.tokenProgram)!),
             AccountMeta(Pubkey(base58: Frankcoin.ataProgram)!),
             AccountMeta(Pubkey(base58: Frankcoin.systemProgram)!),

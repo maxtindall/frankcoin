@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>frankcoin</title>
-<meta name="description" content="frankcoin — a currency you can mine. One billion franks, none sold, none reserved, every one of them mined on somebody's own machine. An art project.">
+<meta name="description" content="frankcoin — a proof-of-work memecoin, mined by anyone and traded freely, governed by the General Secretary: a constrained steward, bound by the code, who can never mint after genesis, never touch a balance, never seize the mint.">
 <style>
   :root{
     --black:#000;
@@ -127,20 +127,20 @@
   <!-- The real text lives in the DOM and the script retypes it, so nothing is
        lost if the script never runs. -->
   <h1 class="brand" data-type>frankcoin</h1>
-  <div class="tag" data-type>a currency you can mine.</div>
+  <div class="tag" data-type>a memecoin you mine, led by the General Secretary.</div>
 
   <section>
     <div class="q" data-type>what it is</div>
-    <p data-type>One billion franks. None sold, none pre-mined, none held back for the developer. Every frank that will ever exist has to be mined first.</p>
-    <p data-type>The program holds its own mint authority. No person — including the developer — can bring a frank into being by signing for it. The only thing it accepts is work.</p>
-    <p data-type>One frank in every ten mined is routed, automatically and direct from mining, to the <a href="https://0state.website">0state</a> treasury — a program account with no private key, spent only by proposal and vote. It is the commons' share of the work, and the only allocation.</p>
+    <p data-type>A memecoin, mined by anyone and traded freely. Franks are minted from zero by proof-of-work — plus a single, open, one-time genesis mint the founding Doge performs in daylight. After that one act the mint is proof-of-work only, forever.</p>
+    <p data-type>The program holds its own mint authority. No person — not the developer, not the Doge — can bring a frank into being after genesis by signing for it. The only thing it accepts is work.</p>
+    <p data-type>There is no treasury and no levy: every mined frank goes to the miner who found it. frankcoin is no longer affiliated with <a href="https://0state.website">0state</a> — that commune now mines its own token.</p>
   </section>
 
   <section>
     <div class="q" data-type>on-chain</div>
     <dl class="report">
       <div class="line"><dt>mined so far</dt><dd id="fMinted">&mdash;</dd></div>
-      <div class="line"><dt>of a cap of</dt><dd id="fCap">1,000,000,000</dd></div>
+      <div class="line"><dt>supply cap</dt><dd id="fCap">none &mdash; uncapped, like Dogecoin</dd></div>
       <div class="line"><dt>proofs accepted</dt><dd id="fProofs">&mdash;</dd></div>
       <div class="line"><dt>reward now</dt><dd id="fReward">&mdash;</dd></div>
       <div class="line"><dt>difficulty</dt><dd id="fDiff">&mdash;</dd></div>
@@ -161,8 +161,9 @@
   </section>
 
   <section>
-    <div class="q" data-type>governance</div>
-    <p data-type>Mining frankcoin also establishes membership in <a href="https://0state.website">0state</a>, a political organization governed by its miners. Because that franchise is earned through proof-of-work and cannot be transferred, holding or trading franks confers no control over it — the currency and the vote are held separately.</p>
+    <div class="q" data-type>the general secretary</div>
+    <p data-type>frankcoin has one steward, the General Secretary — democratic centralism enforced in bytecode. The Secretary is the coin's paramount servant, bound absolutely by the Party line, and here the Party is the code. The Secretary may curate the coin's identity, tune the mine's pace within hard bounds, pause mining in an emergency, and pass the office to a successor.</p>
+    <p data-type>The Secretary may never mint after genesis, never touch a holder's balance, and never seize the mint away from the program. These are not promises. They are the absence of any instruction that could do otherwise — no private enrichment, no expropriation, no cult of personality that outlives the code.</p>
   </section>
 
   <section>
@@ -178,7 +179,7 @@
   <div class="disc" data-type>frankcoin runs on Solana's devnet, not mainnet — devnet franks cannot be sold and are worth nothing.</div>
 
   <footer>
-    max tindall inc &middot; mined, never sold<br>
+    max tindall inc &middot; mined, freely traded, led by the General Secretary<br>
     <span id="fProgram">&mdash;</span>
   </footer>
 </div>
@@ -287,7 +288,7 @@
       }
       if (!st.deployed) { put('fMinted', 'not on this network'); return; }
       put('fMinted', fmt(st.totalMinted) + ' franks');
-      put('fCap', fmt(st.cap));
+      put('fCap', 'none — uncapped, like Dogecoin');
       put('fProofs', fmt(st.proofsAccepted));
       put('fReward', fmt(st.nextReward) + ' franks');
       put('fDiff', st.difficulty + ' bits');

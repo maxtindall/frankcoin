@@ -6,8 +6,9 @@ use anchor_spl::token::{self, Mint, MintTo, Token, TokenAccount};
 use crate::{constants::*, error::FrankError, state::{Config, Proof}};
 
 /// The proof-of-work mint. A miner submits a nonce; the program verifies the
-/// hash meets difficulty, mints the reward to the miner, and rolls the
-/// challenge forward so the same proof can never be reused.
+/// hash meets difficulty, mints the full reward to the miner, and rolls the
+/// challenge forward so the same proof can never be reused. There is no levy and
+/// no treasury: frankcoin is a memecoin — every mined frank goes to the miner.
 #[derive(Accounts)]
 pub struct Mine<'info> {
     #[account(mut)]
@@ -35,22 +36,6 @@ pub struct Mine<'info> {
     )]
     pub miner_ata: Account<'info, TokenAccount>,
 
-    /// CHECK: the PDA that owns the DAO treasury. It has no private key, so the
-    /// franks routed here can only leave via a governance-gated instruction —
-    /// spending is by 0state proposal and vote. Seeds enforce the address.
-    #[account(seeds = [TREASURY_SEED], bump)]
-    pub treasury: UncheckedAccount<'info>,
-
-    /// The DAO treasury's token account. 10% of every reward is minted here,
-    /// automatically and unavoidably, direct from mining.
-    #[account(
-        init_if_needed,
-        payer = miner,
-        associated_token::mint = mint,
-        associated_token::authority = treasury
-    )]
-    pub treasury_ata: Account<'info, TokenAccount>,
-
     pub token_program: Program<'info, Token>,
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub system_program: Program<'info, System>,
@@ -60,6 +45,7 @@ pub fn handler(ctx: Context<Mine>, nonce: u64) -> Result<()> {
     let clock = Clock::get()?;
 
     // Read the values we need before taking mutable borrows.
+    let paused = ctx.accounts.config.paused;
     let difficulty = ctx.accounts.config.difficulty;
     let cooldown = ctx.accounts.config.cooldown;
     let authority_bump = ctx.accounts.config.authority_bump;
@@ -67,16 +53,18 @@ pub fn handler(ctx: Context<Mine>, nonce: u64) -> Result<()> {
     let challenge = ctx.accounts.proof.challenge;
     let last_claim_ts = ctx.accounts.proof.last_claim_ts;
 
-    // 1. Cap.
-    require!(total_minted < MAX_SUPPLY, FrankError::FullyMined);
+    // 0. The General Secretary's emergency brake. Gates issuance only — it can never move a
+    //    balance, and clears the moment the General Secretary lifts it.
+    require!(!paused, FrankError::MiningPaused);
 
-    // 2. Cooldown.
+    // 1. Cooldown. There is no supply cap: mining never ends. The reward decays
+    //    across the distribution phase and then holds at a fixed tail forever.
     require!(
         clock.unix_timestamp >= last_claim_ts.saturating_add(cooldown),
         FrankError::Cooldown
     );
 
-    // 3. Verify the proof: keccak(challenge || miner || nonce) >= difficulty.
+    // 2. Verify the proof: keccak(challenge || miner || nonce) meets difficulty.
     let hash = hashv(&[
         &challenge,
         ctx.accounts.miner.key().as_ref(),
@@ -87,19 +75,10 @@ pub fn handler(ctx: Context<Mine>, nonce: u64) -> Result<()> {
         FrankError::InsufficientDifficulty
     );
 
-    // 4. Reward, clamped to remaining supply so the cap is exact.
-    let remaining = MAX_SUPPLY
-        .checked_sub(total_minted)
-        .ok_or(FrankError::Overflow)?;
-    let reward = reward_for(total_minted).min(remaining);
-    require!(reward > 0, FrankError::FullyMined);
-
-    // 5. Split the reward: 10% to the DAO treasury, the rest to the miner. The
-    //    levy is taken direct from mining, hardcoded, for the furtherance of
-    //    0state's goals; it is spent only by proposal and vote. Integer division
-    //    rounds the treasury cut down, so the miner keeps any remainder.
-    let dao_cut = reward / TREASURY_BPS_DIVISOR; // reward / 10 = 10%
-    let miner_cut = reward - dao_cut;
+    // 3. Reward for the current point on the emission curve. Never zero — past
+    //    the distribution phase it is exactly TAIL_REWARD. The whole reward is
+    //    the miner's: no levy, no treasury cut.
+    let reward = reward_for(total_minted);
 
     let signer: &[&[&[u8]]] = &[&[CONFIG_SEED, &[authority_bump]]];
     token::mint_to(
@@ -112,34 +91,39 @@ pub fn handler(ctx: Context<Mine>, nonce: u64) -> Result<()> {
             },
             signer,
         ),
-        miner_cut,
+        reward,
     )?;
-    if dao_cut > 0 {
-        token::mint_to(
-            CpiContext::new_with_signer(
-                ctx.accounts.token_program.key(),
-                MintTo {
-                    mint: ctx.accounts.mint.to_account_info(),
-                    to: ctx.accounts.treasury_ata.to_account_info(),
-                    authority: ctx.accounts.config.to_account_info(),
-                },
-                signer,
-            ),
-            dao_cut,
-        )?;
-    }
 
-    // 6. Update state.
+    // 4. Update state.
     let cfg = &mut ctx.accounts.config;
     cfg.total_minted = cfg.total_minted.checked_add(reward).ok_or(FrankError::Overflow)?;
     cfg.proofs_accepted = cfg.proofs_accepted.saturating_add(1);
+
+    // 4a. Difficulty retarget. Once a full window of proofs has been accepted,
+    //     compare how long it actually took against how long it *should* have
+    //     taken at the target pace, and nudge difficulty by one bit if the pace
+    //     is off by more than 2×. Never below the genesis floor, never above the
+    //     ceiling. The `> 0` guard makes a zeroed retarget window inert.
+    if cfg.retarget_interval > 0
+        && cfg.proofs_accepted.saturating_sub(cfg.window_start_proofs) >= cfg.retarget_interval
+    {
+        let elapsed = clock.unix_timestamp.saturating_sub(cfg.window_start_ts).max(0);
+        let expected = cfg.target_interval.saturating_mul(cfg.retarget_interval as i64);
+        if elapsed.saturating_mul(2) < expected && cfg.difficulty < MAX_DIFFICULTY {
+            cfg.difficulty += 1; // proofs coming too fast -> raise difficulty
+        } else if elapsed > expected.saturating_mul(2) && cfg.difficulty > cfg.min_difficulty {
+            cfg.difficulty -= 1; // proofs coming too slow -> lower difficulty
+        }
+        cfg.window_start_ts = clock.unix_timestamp;
+        cfg.window_start_proofs = cfg.proofs_accepted;
+    }
 
     let proof = &mut ctx.accounts.proof;
     proof.last_claim_ts = clock.unix_timestamp;
     proof.total_mined = proof.total_mined.checked_add(reward).ok_or(FrankError::Overflow)?;
     proof.count = proof.count.saturating_add(1);
 
-    // 7. Roll the challenge forward: anti-replay and anti-precompute.
+    // 5. Roll the challenge forward: anti-replay and anti-precompute.
     proof.challenge = hashv(&[
         &challenge,
         &nonce.to_le_bytes(),
@@ -163,17 +147,21 @@ fn leading_zero_bits(hash: &[u8; 32]) -> u32 {
     count
 }
 
-/// Reward halves each supply tranche. Band 0 = first 50M FRANKS at 50/proof,
-/// band 1 = next 25M at 25/proof, band 2 = next 12.5M at 12.5/proof, ... The
-/// full series sums to exactly MAX_SUPPLY. Cap exactness is separately
-/// guaranteed by the clamp in the handler.
-fn reward_for(total_minted: u64) -> u64 {
+/// The emission curve. Starts at INITIAL_REWARD (500 franks) and halves once per
+/// supply tranche across the distribution phase — tranche 0 spans the first 500M
+/// franks at 500/proof, tranche 1 the next 250M at 250/proof, and so on — then
+/// **floors at TAIL_REWARD and stays there forever**. It never returns zero, so
+/// mining is uncapped.
+pub fn reward_for(total_minted: u64) -> u64 {
     let mut reward = INITIAL_REWARD;
     let mut lo: u64 = 0;
-    let mut size: u64 = MAX_SUPPLY / 2; // band 0 spans the first 50M
+    let mut size: u64 = DISTRIBUTION_PHASE / 2; // tranche 0 spans the first 500M
     loop {
+        if reward <= TAIL_REWARD {
+            return TAIL_REWARD; // perpetual tail — emission never stops
+        }
         let hi = lo.saturating_add(size);
-        if total_minted < hi || size == 0 || reward == 0 {
+        if total_minted < hi {
             return reward;
         }
         lo = hi;
@@ -189,45 +177,44 @@ mod reward_tests {
     #[test]
     fn genesis_reward_is_500_frank() {
         assert_eq!(reward_for(0), INITIAL_REWARD);
-        assert_eq!(reward_for(MAX_SUPPLY / 2 - 1), INITIAL_REWARD);
+        assert_eq!(reward_for(DISTRIBUTION_PHASE / 2 - 1), INITIAL_REWARD);
     }
 
     #[test]
     fn reward_halves_each_tranche() {
-        // band 1 starts at 50M cumulative -> reward 25 FRANKS
-        assert_eq!(reward_for(MAX_SUPPLY / 2), INITIAL_REWARD / 2);
-        // band 2 starts at 75M cumulative -> reward 12.5 FRANKS
-        assert_eq!(reward_for(MAX_SUPPLY / 2 + MAX_SUPPLY / 4), INITIAL_REWARD / 4);
+        assert_eq!(reward_for(DISTRIBUTION_PHASE / 2), INITIAL_REWARD / 2);
+        assert_eq!(reward_for(DISTRIBUTION_PHASE / 2 + DISTRIBUTION_PHASE / 4), INITIAL_REWARD / 4);
     }
 
     #[test]
-    fn never_exceeds_cap_and_asymptotes() {
-        // Mine the entire schedule, always paying the current band reward
-        // clamped to remaining. THE hard invariant: total must never exceed
-        // MAX_SUPPLY. Integer halving leaves tiny dust near the cap (like
-        // Bitcoin never quite reaching 21M), so we assert convergence to
-        // within a hair rather than exact equality.
-        let mut total: u64 = 0;
-        loop {
-            let r = reward_for(total).min(MAX_SUPPLY - total);
-            if r == 0 { break; }              // reward truncated to zero: mining ends
-            total += r;
-            assert!(total <= MAX_SUPPLY, "CAP EXCEEDED at total {}", total);
+    fn emission_is_uncapped_and_floors_at_tail() {
+        assert_eq!(reward_for(DISTRIBUTION_PHASE.saturating_mul(4)), TAIL_REWARD);
+        assert_eq!(reward_for(u64::MAX / 2), TAIL_REWARD);
+        assert!(reward_for(u64::MAX / 2) > 0);
+    }
+
+    #[test]
+    fn reward_is_monotonic_down_to_the_tail() {
+        let mut prev = u64::MAX;
+        let mut total = 0u64;
+        for _ in 0..64 {
+            let r = reward_for(total);
+            assert!(r >= TAIL_REWARD, "dropped below tail at {}", total);
+            assert!(r <= prev, "reward increased at {}", total);
+            prev = r;
+            total = total.saturating_add(DISTRIBUTION_PHASE / 8);
         }
-        // Reached at least 99.9999% of the cap; remainder is unmineable dust.
-        let mined_bps = (total as u128 * 1_000_000) / MAX_SUPPLY as u128;
-        assert!(mined_bps >= 999_999, "only reached {} millionths of cap", mined_bps);
-        assert!(total < MAX_SUPPLY || total == MAX_SUPPLY);
+        assert_eq!(reward_for(total), TAIL_REWARD);
     }
 
     #[test]
     fn leading_zero_bits_counts_correctly() {
         let mut h = [0u8; 32];
         assert_eq!(leading_zero_bits(&h), 256);
-        h[0] = 0b0000_1000; // 4 leading zeros in the first byte
+        h[0] = 0b0000_1000;
         assert_eq!(leading_zero_bits(&h), 4);
         h[0] = 0;
-        h[1] = 0b1000_0000; // 8 (first byte) + 0
+        h[1] = 0b1000_0000;
         assert_eq!(leading_zero_bits(&h), 8);
     }
 }

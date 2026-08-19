@@ -11,7 +11,11 @@ import { Connection, PublicKey } from '@solana/web3.js';
 
 export const PROGRAM_ID = '61yBp4FQSXq6qxS1Scny8LRBNDLDoNQBKupofVSyyHL8';
 const ONE_FRANK = 1e9;
-const CAP = 1000000000n * BigInt(ONE_FRANK);
+// NOT a cap. frankcoin is uncapped (a Dogecoin-style model): the reward halves
+// across this distribution phase, then floors at a perpetual 1-frank tail —
+// emission never stops.
+const DISTRIBUTION_PHASE = 1000000000n * BigInt(ONE_FRANK);
+const TAIL = 1n * BigInt(ONE_FRANK);
 
 function pdas(programId) {
   const pid = new PublicKey(programId);
@@ -23,11 +27,18 @@ function pdas(programId) {
   };
 }
 
-/** What the next accepted proof pays. Mirrors reward_for() in the program. */
+/** What the next accepted proof pays. Mirrors reward_for() in the program:
+ * halves each tranche across the distribution phase, then **floors at the tail
+ * (1 frank) forever** — it never returns 0, because mining is uncapped. */
 export function rewardFor(totalMinted) {
-  let minted = BigInt(totalMinted), tranche = CAP / 2n, reward = 500n * BigInt(ONE_FRANK);
-  while (minted >= tranche && reward > 0n) { minted -= tranche; tranche /= 2n; reward /= 2n; }
-  return Number(reward) / ONE_FRANK;
+  const minted = BigInt(totalMinted);
+  let reward = 500n * BigInt(ONE_FRANK), lo = 0n, size = DISTRIBUTION_PHASE / 2n;
+  while (true) {
+    if (reward <= TAIL) return Number(TAIL) / ONE_FRANK;
+    const hi = lo + size;
+    if (minted < hi) return Number(reward) / ONE_FRANK;
+    lo = hi; size /= 2n; reward /= 2n;
+  }
 }
 
 /** The chain's position: supply, proofs, difficulty, reward. */
@@ -49,6 +60,7 @@ export async function state({ rpcUrl, programId = PROGRAM_ID }) {
     totalMinted: Number(totalMinted) / ONE_FRANK,
     proofsAccepted: Number(v.getBigUint64(67, true)),
     nextReward: rewardFor(totalMinted),
-    cap: Number(CAP) / ONE_FRANK,
+    uncapped: true,
+    distributionPhase: Number(DISTRIBUTION_PHASE) / ONE_FRANK,
   };
 }
