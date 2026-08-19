@@ -133,14 +133,16 @@ Task {
                     print("  +\(commas(Int(st.nextReward))) franks · \(sig)")
                 } catch {
                     let msg = error.localizedDescription
-                    if msg.contains("Cooldown") {
+                    // Cooldown is error 6001 (0x1771). The RPC reports the raw
+                    // code, not the name, so match both.
+                    if msg.contains("Cooldown") || msg.contains("0x1771") {
                         print("  cooldown — waiting \(st.cooldown)s before the next claim")
                         try await Task.sleep(nanoseconds: UInt64(max(st.cooldown, 1)) * 1_000_000_000)
-                    } else if msg.contains("FullyMined") {
-                        print("  frankcoin is fully mined. there will be no more.")
-                        break
                     } else {
+                        // Anything else (rate limit, transient RPC): back off briefly
+                        // rather than hammering, then try again.
                         print("  could not submit: \(msg)")
+                        try await Task.sleep(nanoseconds: 3 * 1_000_000_000)
                     }
                 }
                 st = try await fc.state(miner: wallet.pubkey)
