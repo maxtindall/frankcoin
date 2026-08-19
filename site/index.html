@@ -140,7 +140,7 @@
     <div class="q" data-type>on-chain</div>
     <dl class="report">
       <div class="line"><dt>mined so far</dt><dd id="fMinted">&mdash;</dd></div>
-      <div class="line"><dt>supply cap</dt><dd id="fCap">none &mdash; uncapped, like Dogecoin</dd></div>
+      <div class="line"><dt>supply cap</dt><dd id="fCap">none &mdash; uncapped, mined forever</dd></div>
       <div class="line"><dt>proofs accepted</dt><dd id="fProofs">&mdash;</dd></div>
       <div class="line"><dt>reward now</dt><dd id="fReward">&mdash;</dd></div>
       <div class="line"><dt>difficulty</dt><dd id="fDiff">&mdash;</dd></div>
@@ -170,7 +170,11 @@
     <button class="cmd" id="cmd" type="button" title="click to copy"><span class="sig">$ </span>brew install maxtindall/frankcoin/frankcoin</button>
     <div class="copied" id="copied"></div>
     <div class="alt">
+      Then mine, straight from the terminal &mdash; it signs with your own wallet:
+      <br><span class="sig">$ </span>frankcoin mine
+      <br><br>
       Homebrew builds it from source on your own machine, so there is no binary to trust.
+      Update any time with <span class="sig">$ </span>brew upgrade maxtindall/frankcoin/frankcoin.
       There is also a <a href="https://github.com/maxtindall/frankcoin/releases">Mac app</a>,
       and the <a href="https://github.com/maxtindall/frankcoin">whole thing is readable</a>.
     </div>
@@ -288,7 +292,7 @@
       }
       if (!st.deployed) { put('fMinted', 'not on this network'); return; }
       put('fMinted', fmt(st.totalMinted) + ' franks');
-      put('fCap', 'none — uncapped, like Dogecoin');
+      put('fCap', 'none — uncapped, mined forever');
       put('fProofs', fmt(st.proofsAccepted));
       put('fReward', fmt(st.nextReward) + ' franks');
       put('fDiff', st.difficulty + ' bits');

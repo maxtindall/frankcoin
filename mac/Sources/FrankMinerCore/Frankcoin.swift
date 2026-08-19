@@ -21,7 +21,7 @@ public struct Frankcoin {
     static let ataProgram = "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
     static let systemProgram = "11111111111111111111111111111111"
     static let oneFrank: Double = 1_000_000_000
-    // NOT a cap. frankcoin is uncapped (a Dogecoin-style model): the reward
+    // NOT a cap. frankcoin is uncapped: the reward
     // halves across this distribution phase, then floors at a perpetual tail of
     // 1 frank/proof, forever. Emission never stops.
     static let distributionPhase: UInt64 = 1_000_000_000 * 1_000_000_000

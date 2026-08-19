@@ -11,7 +11,7 @@ import { Connection, PublicKey } from '@solana/web3.js';
 
 export const PROGRAM_ID = '61yBp4FQSXq6qxS1Scny8LRBNDLDoNQBKupofVSyyHL8';
 const ONE_FRANK = 1e9;
-// NOT a cap. frankcoin is uncapped (a Dogecoin-style model): the reward halves
+// NOT a cap. frankcoin is uncapped: the reward halves
 // across this distribution phase, then floors at a perpetual 1-frank tail —
 // emission never stops.
 const DISTRIBUTION_PHASE = 1000000000n * BigInt(ONE_FRANK);
