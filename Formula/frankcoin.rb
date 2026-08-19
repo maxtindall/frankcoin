@@ -7,8 +7,8 @@
 class Frankcoin < Formula
   desc "Mine franks on your own machine (proof-of-work CLI miner)"
   homepage "https://github.com/maxtindall/frankcoin"
-  url "https://github.com/maxtindall/frankcoin/archive/refs/tags/v1.4.0.tar.gz"
-  sha256 "effd96eb5e45dc319a3e2d5672e0d55a4cc04221be7eaa861936435ae731f246"
+  url "https://github.com/maxtindall/frankcoin/archive/refs/tags/v1.4.1.tar.gz"
+  sha256 "c22adf4b4cf91a925de01096befc545ce216548e4da28452b337265139f99a3c"
   license "MIT"
   head "https://github.com/maxtindall/frankcoin.git", branch: "main"
 
