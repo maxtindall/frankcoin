@@ -90,8 +90,6 @@ fn mine_grants_reward_and_enforces_rules() {
     assert!(send(&mut svm, &[reg], &miner, &[&miner]), "register failed");
 
     let miner_ata = ata(&miner.pubkey(), &mint);
-    let treasury = Pubkey::find_program_address(&[b"treasury"], &program_id).0;
-    let treasury_ata = ata(&treasury, &mint);
 
     // --- mine once: grind a valid nonce against the current challenge ---
     let read_challenge = |svm: &LiteSVM| -> [u8; 32] {
@@ -109,8 +107,6 @@ fn mine_grants_reward_and_enforces_rules() {
             mint,
             proof,
             miner_ata,
-            treasury,
-            treasury_ata,
             token_program: TOKEN,
             associated_token_program: ATA_PROG,
             system_program: solana_pubkey::Pubkey::default(),
@@ -121,9 +117,8 @@ fn mine_grants_reward_and_enforces_rules() {
 
     let n1 = grind(&read_challenge(&svm), &miner.pubkey(), 8);
     assert!(send(&mut svm, &[mk_mine(n1)], &miner, &[&miner]), "first mine failed");
-    // 90/10 split: miner keeps 450, the DAO treasury gets 50.
-    assert_eq!(token_balance(&svm, &miner_ata), 450_000_000_000, "miner keeps 90% = 450 FRANKS");
-    assert_eq!(token_balance(&svm, &treasury_ata), 50_000_000_000, "treasury gets 10% = 50 FRANKS");
+    // No treasury, no levy: the miner keeps the whole 500-frank reward.
+    assert_eq!(token_balance(&svm, &miner_ata), 500_000_000_000, "miner keeps the full 500 FRANKS");
 
     // --- config.total_minted tracks it ---
     let cfg = frankcoin::state::Config::try_deserialize(
@@ -137,9 +132,8 @@ fn mine_grants_reward_and_enforces_rules() {
     assert!(!send(&mut svm, &[mk_mine(n1)], &miner, &[&miner]),
         "stale nonce must be rejected after the challenge rolls");
 
-    // --- mine again with a freshly ground nonce -> 100 FRANKS ---
+    // --- mine again with a freshly ground nonce -> 1000 FRANKS total ---
     let n2 = grind(&read_challenge(&svm), &miner.pubkey(), 8);
     assert!(send(&mut svm, &[mk_mine(n2)], &miner, &[&miner]), "second mine failed");
-    assert_eq!(token_balance(&svm, &miner_ata), 900_000_000_000, "two rewards, miner 90% = 900 FRANKS");
-    assert_eq!(token_balance(&svm, &treasury_ata), 100_000_000_000, "two rewards, treasury 10% = 100 FRANKS");
+    assert_eq!(token_balance(&svm, &miner_ata), 1_000_000_000_000, "two rewards, miner keeps all = 1000 FRANKS");
 }
