@@ -4,340 +4,124 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>frankcoin</title>
-<meta name="description" content="frankcoin — a proof-of-work memecoin, mined by anyone and traded freely, governed by the General Secretary: a constrained steward, bound by the code, who can never mint after genesis, never touch a balance, never seize the mint.">
+<meta name="description" content="frankcoin — a memorandum. A proof-of-work memecoin: fixed 5,000,000,000 cap, fair launch, renounced, deflationary, and mined from zero.">
 <style>
   :root{
-    --black:#000;
-    --green:#35ff6a;        /* phosphor */
-    --green-2:#2ad257;
-    --dim:#199c3f;
-    --faint:#0d5222;
-    --red:#ff4444;
+    --black:#000; --green:#35ff6a; --green-2:#2ad257; --dim:#199c3f;
+    --faint:#0d5222; --bright:#c6ffd8; --red:#ff4444; --rule:rgba(53,255,106,.22);
   }
   *{box-sizing:border-box;margin:0;padding:0;
     font-family:"Courier New",ui-monospace,SFMono-Regular,Menlo,monospace}
   html{-webkit-text-size-adjust:100%}
-  body{background:var(--black);color:var(--green);line-height:1.55;
-       padding:0 18px 90px;overflow-x:hidden}
+  body{background:var(--black);color:var(--green);line-height:1.5;font-size:14px;
+       letter-spacing:.2px;padding:0 18px 90px;overflow-x:hidden}
 
-  /* --- the tube -------------------------------------------------------
-     Scanlines and vignette, fixed over everything. Atmosphere only, so they
-     never take a pointer event, and the scanlines lift for readers who ask
-     for reduced motion. */
+  /* the tube */
   body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:9;
-    background:repeating-linear-gradient(180deg,
-      rgba(0,0,0,0) 0px, rgba(0,0,0,0) 2px,
-      rgba(0,0,0,.20) 3px, rgba(0,0,0,.20) 4px)}
+    background:repeating-linear-gradient(180deg,rgba(0,0,0,0) 0px,rgba(0,0,0,0) 2px,rgba(0,0,0,.20) 3px,rgba(0,0,0,.20) 4px)}
   body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:8;
-    background:radial-gradient(ellipse at center,
-      rgba(0,0,0,0) 52%, rgba(0,0,0,.55) 100%)}
+    background:radial-gradient(ellipse at center,rgba(0,0,0,0) 52%,rgba(0,0,0,.55) 100%)}
 
-  .page{width:100%;max-width:760px;margin:0 auto;padding-top:15vh;
-        position:relative;z-index:1}
+  .page{width:100%;max-width:680px;margin:0 auto;padding-top:14vh;position:relative;z-index:1}
 
-  /* --- masthead ------------------------------------------------------ */
-  .brand{font-size:clamp(34px,11vw,54px);font-weight:bold;letter-spacing:1px;
-    color:var(--green);text-shadow:0 0 12px rgba(53,255,106,.45);
-    margin-bottom:6px;min-height:1.1em}
-  .tag{color:var(--green-2);font-size:13px;letter-spacing:1px;min-height:20px}
+  .brand{font-size:clamp(32px,11vw,50px);font-weight:bold;letter-spacing:1px;
+    color:var(--green);text-shadow:0 0 12px rgba(53,255,106,.45)}
+  .tag{color:var(--green-2);font-size:12px;letter-spacing:3px;text-transform:uppercase;margin-top:6px}
+  .re{color:var(--dim);font-size:12.5px;margin-top:16px;border-left:2px solid var(--dim);padding-left:12px;max-width:60ch}
 
-  .cursor{display:inline-block;width:8px;height:1em;background:var(--green);
-    vertical-align:-2px;margin-left:2px;animation:blink .9s steps(1) infinite}
-  @keyframes blink{0%,49%{opacity:1}50%,100%{opacity:0}}
-
-  /* --- typed blocks -------------------------------------------------- */
-  section{margin-top:60px}
-  .q{color:var(--dim);font-size:12px;letter-spacing:2px;text-transform:uppercase;
-     margin-bottom:14px;min-height:1em}
-  .q::before{content:"> ";color:var(--faint)}
-
-  p{font-size:14px;letter-spacing:.4px;margin-bottom:16px;max-width:62ch;
-    min-height:1em}
+  section{margin-top:36px}
+  h2{font-size:11px;letter-spacing:2.5px;text-transform:uppercase;color:var(--dim);
+     padding-bottom:7px;margin-bottom:13px;border-bottom:1px solid var(--rule)}
+  h2::before{content:"§ ";color:var(--faint)}
+  p{max-width:64ch;margin-bottom:13px}
   p:last-child{margin-bottom:0}
-  .aside{color:var(--dim);font-size:12.5px}
+  b.k{color:var(--bright);font-weight:normal}
+  ul{list-style:none;max-width:64ch;display:flex;flex-direction:column;gap:9px}
+  ul li{padding-left:20px;position:relative}
+  ul li::before{content:"▸";position:absolute;left:0;color:var(--dim)}
+  ul li b{color:var(--bright);font-weight:normal}
 
-  /* --- the chain's own report ---------------------------------------- */
-  .report{border:1px solid rgba(53,255,106,.22);padding:16px 18px;
-    max-width:62ch;background:rgba(53,255,106,.02)}
-  .line{display:flex;gap:14px;padding:3px 0;align-items:baseline;
-    font-size:13px;letter-spacing:.5px}
-  .line dt{color:var(--dim);white-space:nowrap;min-width:15ch}
-  .line dd{color:var(--green);font-variant-numeric:tabular-nums;
-    text-shadow:0 0 8px rgba(53,255,106,.28)}
-  .line dd.small{font-size:11px;color:var(--green-2);word-break:break-all;
-    text-shadow:none}
-  .line dd a,footer a{color:inherit;text-decoration:none;
-    border-bottom:1px dotted rgba(53,255,106,.45)}
-  .line dd a:hover,.line dd a:focus-visible,
-  footer a:hover,footer a:focus-visible{color:#c6ffd8;
-    border-bottom-style:solid;border-bottom-color:#c6ffd8}
-  .scan{display:block;margin-top:14px;font-size:12px;color:var(--dim);
-    letter-spacing:.5px}
-  .scan a{color:var(--green);text-decoration:none;
-    border-bottom:1px solid rgba(53,255,106,.35)}
-  .scan a:hover,.scan a:focus-visible{color:#c6ffd8;border-bottom-color:#c6ffd8}
-  @media(max-width:520px){
-    .line{flex-direction:column;gap:0}
-    .line dt{min-width:0}
-  }
+  .ledger{border:1px solid var(--rule);background:rgba(53,255,106,.02)}
+  .row{display:grid;grid-template-columns:16ch 1fr;gap:14px;padding:7px 15px;font-size:12.5px;align-items:baseline}
+  .row + .row{border-top:1px solid rgba(53,255,106,.10)}
+  .row dt{color:var(--dim);white-space:nowrap}
+  .row dd{color:var(--green);word-break:break-all;font-variant-numeric:tabular-nums}
+  @media(max-width:520px){.row{grid-template-columns:1fr;gap:1px}}
 
-  /* --- the way in ----------------------------------------------------- */
-  .cmd{display:block;border:1px solid rgba(53,255,106,.35);padding:14px 16px;
-    color:var(--green);font-size:13.5px;letter-spacing:.5px;max-width:62ch;
-    background:rgba(53,255,106,.04);cursor:pointer;text-align:left;width:100%;
-    transition:border-color .15s,box-shadow .15s}
-  .cmd:hover,.cmd:focus-visible{border-color:var(--green);
-    box-shadow:0 0 14px rgba(53,255,106,.25);outline:none}
-  .cmd .sig{color:var(--faint)}
-  .copied{color:var(--green-2);font-size:11.5px;letter-spacing:1px;
-    margin-top:8px;min-height:1.2em}
-  .alt{margin-top:14px;font-size:12.5px;color:var(--dim);letter-spacing:.5px;
-    max-width:62ch;line-height:1.75}
-  .alt a{color:var(--green);text-decoration:none;
-    border-bottom:1px solid rgba(53,255,106,.35)}
-  .alt a:hover,.alt a:focus-visible{color:#c6ffd8;border-bottom-color:#c6ffd8}
-
-  /* --- the notice ------------------------------------------------------ */
   .disc{color:var(--red);font-size:11.5px;letter-spacing:.6px;line-height:1.65;
-    max-width:52ch;margin-top:60px;text-shadow:0 0 10px rgba(255,68,68,.35)}
+    max-width:56ch;margin-top:40px;text-shadow:0 0 10px rgba(255,68,68,.35)}
+  footer{margin-top:44px;padding-top:14px;border-top:1px solid var(--rule);
+    color:var(--faint);font-size:11px;letter-spacing:1px;line-height:1.9;word-break:break-all}
 
-  footer{margin-top:52px;color:var(--faint);font-size:11px;letter-spacing:1px;
-    line-height:1.9;word-break:break-all}
-
-  /* --- the emblem ---------------------------------------------------
-     A coin, in the corner, on the same tube as everything else: it sits
-     under the scanline layer so it is lit by it rather than pasted on top. */
-  /* Full-bleed so a burst can carry fragments across the page and only leave
-     at the edge of the screen, rather than being cropped by a box. */
-  /* Behind the words. It is atmosphere, and reading must always win. */
-  #emblem{position:fixed;inset:0;width:100%;height:100%;
-    z-index:0;pointer-events:none;opacity:.94}
-  @media(max-width:640px){#emblem{opacity:.7}}
+  /* the emblem — a coin, behind the words, lit by the same tube */
+  #emblem{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;opacity:.94}
+  @media(max-width:640px){#emblem{opacity:.55}}
   @media(max-width:380px){#emblem{display:none}}
-
-  @media (prefers-reduced-motion:reduce){
-    .cursor{animation:none}
-    body::before{display:none}
-  }
+  @media (prefers-reduced-motion:reduce){body::before{display:none}}
 </style>
 </head>
 <body>
 <div class="page">
 
-  <!-- The real text lives in the DOM and the script retypes it, so nothing is
-       lost if the script never runs. -->
-  <h1 class="brand" data-type>frankcoin</h1>
-  <div class="tag" data-type>a memecoin you mine, led by the General Secretary.</div>
+  <h1 class="brand">frankcoin</h1>
+  <div class="tag">a memorandum</div>
+  <div class="re"><b style="color:var(--green-2)">RE:</b> what frankcoin became, and what it costs to launch.</div>
 
   <section>
-    <div class="q" data-type>what it is</div>
-    <p data-type>A memecoin, mined by anyone and traded freely. Franks are minted from zero by proof-of-work — plus a single, open, one-time genesis mint the founding Doge performs in daylight. After that one act the mint is proof-of-work only, forever.</p>
-    <p data-type>The program holds its own mint authority. No person — not the developer, not the Doge — can bring a frank into being after genesis by signing for it. The only thing it accepts is work.</p>
-    <p data-type>There is no treasury and no levy: every mined frank goes to the miner who found it. frankcoin is no longer affiliated with <a href="https://0state.website">0state</a> — that commune now mines its own token.</p>
+    <h2>What it is</h2>
+    <p>frankcoin is a proof-of-work <b class="k">memecoin</b> — the synthesis of what wins on Solana (a fixed supply, a fair launch, renounced control, a burn) wrapped around the one thing no other meme has: you <b class="k">mine</b> it, from zero, on your own machine.</p>
   </section>
 
   <section>
-    <div class="q" data-type>on-chain</div>
-    <dl class="report">
-      <div class="line"><dt>mined so far</dt><dd id="fMinted">&mdash;</dd></div>
-      <div class="line"><dt>supply cap</dt><dd id="fCap">none &mdash; uncapped, mined forever</dd></div>
-      <div class="line"><dt>proofs accepted</dt><dd id="fProofs">&mdash;</dd></div>
-      <div class="line"><dt>reward now</dt><dd id="fReward">&mdash;</dd></div>
-      <div class="line"><dt>difficulty</dt><dd id="fDiff">&mdash;</dd></div>
-      <div class="line"><dt>one claim per</dt><dd id="fCool">&mdash;</dd></div>
-      <div class="line"><dt>token</dt><dd class="small" id="fMint">&mdash;</dd></div>
-    </dl>
-    <div class="scan">Every proof and every frank is on the public ledger &mdash;
-      <a id="scanToken" href="https://solscan.io/" target="_blank" rel="noopener">inspect the token</a>
-      or <a id="scanProgram" href="https://solscan.io/" target="_blank" rel="noopener">read the program</a>
-      on Solscan.</div>
+    <h2>The tokenomics</h2>
+    <ul>
+      <li><b>Fixed cap — 5,000,000,000 franks, ever.</b> Mining halts at the cap; supply lands a hair under and never over. No dilution.</li>
+      <li><b>Fair launch.</b> No pre-mine, no team allocation, no presale. Every frank is mined.</li>
+      <li><b>Renounced.</b> No admin, no steward, no owner. The mint authority is a keyless PDA that dies at the cap; the upgrade authority is renounced at launch, so nothing can ever change.</li>
+      <li><b>Deflationary.</b> Anyone can burn franks, and the burn is counted on-chain.</li>
+      <li><b>Buyable.</b> Mined — but a Raydium pool at launch lets the 99% who will never mine simply buy in.</li>
+    </ul>
   </section>
 
   <section>
-    <div class="q" data-type>how it is mined</div>
-    <p data-type>Your machine looks for a number. Hashed together with your wallet and a challenge only you hold, it has to come out beginning with enough zeros. There is no shortcut and no cleverness available. The only method is to keep looking.</p>
-    <p data-type>When your machine finds one, the program checks the work, issues the reward, and rolls your challenge forward. The proof you just spent is worthless a second later.</p>
-    <p class="aside" data-type>Speed stops mattering quickly. A wallet may claim once per cooldown however fast it searched, so a laptop finds as much as a room full of hardware. That is deliberate.</p>
+    <h2>Where it stands</h2>
+    <p>The retooled program is live and verified on Solana <b class="k">devnet</b>. The audit is complete. Mainnet is the next step, and waits only on funding the launch wallet.</p>
   </section>
 
   <section>
-    <div class="q" data-type>the general secretary</div>
-    <p data-type>frankcoin has one steward, the General Secretary — democratic centralism enforced in bytecode. The Secretary is the coin's paramount servant, bound absolutely by the Party line, and here the Party is the code. The Secretary may curate the coin's identity, tune the mine's pace within hard bounds, pause mining in an emergency, and pass the office to a successor.</p>
-    <p data-type>The Secretary may never mint after genesis, never touch a holder's balance, and never seize the mint away from the program. These are not promises. They are the absence of any instruction that could do otherwise — no private enrichment, no expropriation, no cult of personality that outlives the code.</p>
+    <h2>The launch, and the money</h2>
+    <p>Launching costs about <b class="k">3 SOL</b> — almost none of it spent. ~2.6 SOL is a <b class="k">refundable rent deposit</b> that locks the program's code on-chain; the instant the upgrade authority is renounced, that deposit becomes permanent — the price of immutability. The rest is a few cents of network fees.</p>
+    <p>The liquidity seeded into the pool stays the founder's as an LP position, but is exposed to the market the moment trading begins. <b class="k">Nobody profits from the launch</b>; every transaction is signed by the founder alone.</p>
   </section>
 
   <section>
-    <button class="cmd" id="cmd" type="button" title="click to copy"><span class="sig">$ </span>brew install maxtindall/frankcoin/frankcoin</button>
-    <div class="copied" id="copied"></div>
-    <div class="alt">
-      Then mine, straight from the terminal &mdash; it signs with your own wallet:
-      <br><span class="sig">$ </span>frankcoin mine
-      <br><br>
-      Homebrew builds it from source on your own machine, so there is no binary to trust.
-      Update any time with <span class="sig">$ </span>brew upgrade maxtindall/frankcoin/frankcoin.
-      There is also a <a href="https://github.com/maxtindall/frankcoin/releases">Mac app</a>,
-      and the <a href="https://github.com/maxtindall/frankcoin">whole thing is readable</a>.
+    <h2>The record</h2>
+    <div class="ledger">
+      <div class="row"><dt>program (devnet)</dt><dd>FJu4SvyPdLYtCmRSgjZi3ShJvoyEPvjdC1MPhz44ngdF</dd></div>
+      <div class="row"><dt>mint (devnet)</dt><dd>BVEaKRLg7ndqUjU6m2eFTb6jAPbBYu4Emkp2FpnumTed</dd></div>
+      <div class="row"><dt>supply cap</dt><dd>5,000,000,000 franks (fixed)</dd></div>
+      <div class="row"><dt>mint authority</dt><dd>a keyless program PDA</dd></div>
+      <div class="row"><dt>freeze authority</dt><dd>none</dd></div>
     </div>
   </section>
 
-  <div class="disc" data-type>frankcoin runs on Solana's devnet, not mainnet — devnet franks cannot be sold and are worth nothing.</div>
+  <div class="disc">Devnet. These franks are a test network's and are worth nothing. Nothing here is an offer, a sale, a security, or financial advice.</div>
 
-  <footer>
-    max tindall inc &middot; mined, freely traded, led by the General Secretary<br>
-    <a href="./roadmap/" style="color:var(--green-2);text-decoration:none;border-bottom:1px solid rgba(53,255,106,.35)">the roadmap &rarr;</a><br>
-    <span id="fProgram">&mdash;</span>
-  </footer>
+  <footer>max tindall inc &middot; mined from zero &middot; filed 2026-08-19</footer>
 </div>
 
 <canvas id="emblem" aria-hidden="true"></canvas>
 
-<script src="./frankcoin.js"></script>
 <script>
-(function () {
-  var reduce = window.matchMedia
-    && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-  function cursor() {
-    var c = document.createElement('span');
-    c.className = 'cursor';
-    return c;
-  }
-
-  // Type text into an element carrying a blinking cursor along with it — the
-  // same gesture the open bot lock screen makes when it opens.
-  function typeInto(el, text, speed, done) {
-    el.textContent = '';
-    var cur = cursor();
-    el.appendChild(cur);
-    var i = 0;
-    (function tick() {
-      el.textContent = text.slice(0, i);
-      el.appendChild(cur);
-      if (i++ < text.length) setTimeout(tick, speed);
-      else { if (cur.parentNode) cur.parentNode.removeChild(cur); if (done) setTimeout(done, 120); }
-    })();
-  }
-
-  // Each block is typed as a unit, its lines in order, so the page unspools
-  // like a session rather than a dozen things chattering at once.
-  var blocks = [];
-  blocks.push([document.querySelector('.brand'), document.querySelector('.tag')]);
-  Array.prototype.forEach.call(document.querySelectorAll('section'), function (sec) {
-    var kids = sec.querySelectorAll('[data-type]');
-    if (kids.length) blocks.push(Array.prototype.slice.call(kids));
-  });
-  blocks.push([document.querySelector('.disc')]);
-
-  blocks.forEach(function (b) {
-    b.forEach(function (el) {
-      el.setAttribute('data-text', el.textContent.replace(/\s+/g, ' ').trim());
-      if (!reduce) el.textContent = '';
-    });
-  });
-
-  function speedFor(el) {
-    if (el.classList.contains('brand')) return 90;
-    if (el.classList.contains('q')) return 26;
-    return 9;
-  }
-
-  function typeBlock(block, done) {
-    (function next(i) {
-      if (i >= block.length) { if (done) done(); return; }
-      var el = block[i];
-      typeInto(el, el.getAttribute('data-text'), speedFor(el), function () { next(i + 1); });
-    })(0);
-  }
-
-  if (!reduce) {
-    // The masthead plays on load. Only once it has finished does anything
-    // below become eligible, so the opening is never talked over.
-    var armed = false, queued = [];
-    typeBlock(blocks[0], function () {
-      armed = true;
-      queued.splice(0).forEach(function (b) { typeBlock(b); });
-    });
-
-    var seen = [];
-    var io = new IntersectionObserver(function (entries) {
-      entries.forEach(function (e) {
-        if (!e.isIntersecting || seen.indexOf(e.target) >= 0) return;
-        seen.push(e.target);
-        var block = e.target.__block;
-        if (armed) typeBlock(block); else queued.push(block);
-      });
-    }, { rootMargin: '0px 0px -10% 0px', threshold: 0.05 });
-
-    blocks.slice(1).forEach(function (b) {
-      var anchor = b[0].closest('section') || b[0];
-      anchor.__block = b;
-      io.observe(anchor);
-    });
-  }
-
-  // ---- the chain's own numbers --------------------------------------------
-  var F = window.Frankcoin;
-  function fmt(n) { return Number(n).toLocaleString('en-US'); }
-  function put(id, v) { var e = document.getElementById(id); if (e) e.textContent = v; }
-
-  function report() {
-    if (!F) { put('fMinted', 'the reader did not load'); return; }
-    F.state({ rpcUrl: 'https://api.devnet.solana.com' }).then(function (st) {
-      var pf = document.getElementById('fProgram');
-      if (pf) {
-        pf.innerHTML = '';
-        var pa = document.createElement('a');
-        pa.href = 'https://solscan.io/account/' + st.programId + '?cluster=devnet';
-        pa.target = '_blank'; pa.rel = 'noopener'; pa.textContent = st.programId;
-        pf.appendChild(pa);
-      }
-      if (!st.deployed) { put('fMinted', 'not on this network'); return; }
-      put('fMinted', fmt(st.totalMinted) + ' franks');
-      put('fCap', 'none — uncapped, mined forever');
-      put('fProofs', fmt(st.proofsAccepted));
-      put('fReward', fmt(st.nextReward) + ' franks');
-      put('fDiff', st.difficulty + ' bits');
-      put('fCool', st.cooldown + ' seconds, per wallet');
-      put('fMint', st.mint);
-
-      // The addresses are the claim; let people go and check it.
-      var cluster = '?cluster=devnet';
-      var tok = document.getElementById('scanToken');
-      var prg = document.getElementById('scanProgram');
-      if (tok) tok.href = 'https://solscan.io/token/' + st.mint + cluster;
-      if (prg) prg.href = 'https://solscan.io/account/' + st.programId + cluster;
-      var mintEl = document.getElementById('fMint');
-      if (mintEl) {
-        mintEl.innerHTML = '';
-        var a = document.createElement('a');
-        a.href = 'https://solscan.io/token/' + st.mint + cluster;
-        a.target = '_blank'; a.rel = 'noopener'; a.textContent = st.mint;
-        mintEl.appendChild(a);
-      }
-    })['catch'](function () {
-      put('fMinted', 'the network did not answer');
-    });
-  }
-  report();
-  setInterval(report, 30000);
-
   // ---- the emblem ---------------------------------------------------------
-  //
   // A coin drawn as points and rim, spun about its axis, which periodically
-  // flies apart and comes back together. No library and no WebGL: the maths is
-  // a rotation and a weak perspective divide, which is all a coin needs.
-  //
-  // Reforming is exact by construction. A point is always drawn at
-  // rotate(home) + displacement, so the coin cannot drift out of shape —
-  // easing displacement to zero necessarily restores it.
+  // flies apart and comes back together. No library and no WebGL.
   (function emblem() {
     var cv = document.getElementById('emblem');
     if (!cv || !cv.getContext) return;
     var ctx = cv.getContext('2d');
     var W = 0, H = 0, CX = 0, CY = 0, SCALE = 0, DPR = 1;
 
-    // The coin lives near the bottom-right, but the surface is the whole
-    // window, so nothing is clipped until it actually leaves the screen.
     function fit() {
       DPR = Math.min(window.devicePixelRatio || 1, 2);
       W = Math.floor(cv.clientWidth * DPR);
@@ -355,17 +139,16 @@
       refit = setTimeout(fit, 150);
     });
 
-    var pts = [];                       // {hx,hy,hz, dx,dy,dz, vx,vy,vz, r}
-    var rim = [];                       // indices around the edge, drawn as a loop
+    var pts = [];
+    var rim = [];
 
     function add(x, y, z, kind) {
       pts.push({ hx: x, hy: y, hz: z, dx: 0, dy: 0, dz: 0, vx: 0, vy: 0, vz: 0, k: kind });
       return pts.length - 1;
     }
 
-    var R = 1.0, T = 0.12;              // radius, half-thickness
+    var R = 1.0, T = 0.12;
 
-    // The milled edge, and the loop that draws the coin's outline.
     var N = 56;
     for (var i = 0; i < N; i++) {
       var a = i / N * Math.PI * 2;
@@ -373,16 +156,12 @@
       rim.push(add(x, y, -T, 'rim'));
       add(x, y, T, 'rim');
     }
-    // An inner ring on each face, so the coin reads as struck rather than flat.
     for (var j = 0; j < 40; j++) {
       var b = j / 40 * Math.PI * 2;
       add(Math.cos(b) * 0.80, Math.sin(b) * 0.80, T, 'face');
       add(Math.cos(b) * 0.80, Math.sin(b) * 0.80, -T, 'face');
     }
 
-    // The device on the face: sample a glyph from an offscreen canvas and
-    // lift its dark pixels into 3D. Cheaper than hand-plotting a letterform,
-    // and it stays in the same typeface as the rest of the page.
     (function stamp() {
       var g = document.createElement('canvas');
       g.width = g.height = 44;
@@ -400,7 +179,7 @@
           var nx = (x - 22) / 44 * 1.15, ny = (y - 22) / 44 * 1.15;
           if (nx * nx + ny * ny > 0.42) continue;
           add(nx, ny, T + 0.02, 'glyph');
-          add(-nx, ny, -T - 0.02, 'glyph');   // mirrored, so it reads from behind
+          add(-nx, ny, -T - 0.02, 'glyph');
         }
       }
     })();
@@ -410,7 +189,6 @@
     var reduce = window.matchMedia
       && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    // idle -> burst -> reform -> idle
     var IDLE = 0, BURST = 1, REFORM = 2;
     var phase = IDLE, phaseAt = 0;
     var IDLE_MS = 11000, BURST_MS = 1500, REFORM_MS = 1900;
@@ -433,7 +211,6 @@
     var start = 0;
     function frame(now) {
       if (!start) { start = now; phaseAt = now; }
-      var dt = 16;
       ctx.clearRect(0, 0, W, H);
 
       if (!reduce) {
@@ -444,18 +221,14 @@
           phase = REFORM; phaseAt = now;
           for (var q = 0; q < pts.length; q++) {
             var pp = pts[q];
-            pp.sx = pp.dx; pp.sy = pp.dy; pp.sz = pp.dz;   // where the pieces got to
+            pp.sx = pp.dx; pp.sy = pp.dy; pp.sz = pp.dz;
           }
         } else if (phase === REFORM && elapsed > REFORM_MS) {
           phase = IDLE; phaseAt = now;
-          // Land it exactly. Easing alone would leave a hair of drift, and a
-          // coin that is nearly round reads as broken.
           for (var z0 = 0; z0 < pts.length; z0++) {
             pts[z0].dx = pts[z0].dy = pts[z0].dz = 0;
           }
         }
-        // The phase may have just changed, so measure against the new clock
-        // rather than the one we read on the way in.
         elapsed = now - phaseAt;
 
         if (phase === BURST) {
@@ -472,14 +245,10 @@
           }
         }
 
-        // The coin spins faster while it is in pieces, and settles as it knits.
         var boost = phase === BURST ? 2.6 : (phase === REFORM ? 1.7 : 1);
         spin += spinRate * boost;
         wobble = Math.sin(now / 2600) * 0.22;
 
-        // It drifts on a slow figure rather than sitting still, and ranges
-        // wider while it is in pieces — the throw carries the whole coin, not
-        // only the fragments.
         var want = phase === IDLE ? 1 : 2.5;
         roam += (want - roam) * 0.02;
         driftX = (Math.sin(now / 5200) * 30 + Math.sin(now / 1900) * 9) * roam * DPR;
@@ -489,7 +258,6 @@
       var cs = Math.cos(spin), sn = Math.sin(spin);
       var cw = Math.cos(wobble), sw = Math.sin(wobble);
 
-      // How intact the coin is, 1 whole -> 0 scattered. Drives the rim and glow.
       var spread = 0;
       for (var t = 0; t < pts.length; t += 7) {
         var pt = pts[t];
@@ -502,19 +270,12 @@
       for (var n2 = 0; n2 < pts.length; n2++) {
         var pn = pts[n2];
         var x = pn.hx + pn.dx, y = pn.hy + pn.dy, z = pn.hz + pn.dz;
-        var x1 = x * cs + z * sn, z1 = z * cs - x * sn;      // spin about Y
-        var y1 = y * cw - z1 * sw, z2 = z1 * cw + y * sw;    // tip about X
+        var x1 = x * cs + z * sn, z1 = z * cs - x * sn;
+        var y1 = y * cw - z1 * sw, z2 = z1 * cw + y * sw;
         var persp = 2.15 / (2.15 + z2);
-        proj.push({
-          x: CX + driftX + x1 * SCALE * persp,
-          y: CY + driftY + y1 * SCALE * persp,
-          s: persp,
-          z: z2,
-          k: pn.k
-        });
+        proj.push({ x: CX + driftX + x1 * SCALE * persp, y: CY + driftY + y1 * SCALE * persp, s: persp, z: z2, k: pn.k });
       }
 
-      // The outline, only while the coin still holds together.
       if (intact > 0.12) {
         ctx.strokeStyle = 'rgba(' + GREEN + ',' + (0.5 * intact) + ')';
         ctx.lineWidth = 1.1;
@@ -527,7 +288,6 @@
         ctx.stroke();
       }
 
-      // Points, far to near, so nearer pieces read as nearer.
       proj.sort(function (a, b) { return b.z - a.z; });
       ctx.shadowColor = 'rgba(' + GREEN + ',0.85)';
       for (var d2 = 0; d2 < proj.length; d2++) {
@@ -546,21 +306,6 @@
     }
     requestAnimationFrame(frame);
   })();
-
-  // ---- the only interaction on the page -----------------------------------
-  document.getElementById('cmd').addEventListener('click', function () {
-    var text = 'brew install maxtindall/frankcoin/frankcoin';
-    var note = document.getElementById('copied');
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(text).then(function () {
-        note.textContent = 'copied.';
-        setTimeout(function () { note.textContent = ''; }, 2600);
-      })['catch'](function () { note.textContent = 'select it and copy by hand.'; });
-    } else {
-      note.textContent = 'select it and copy by hand.';
-    }
-  });
-})();
 </script>
 </body>
 </html>
