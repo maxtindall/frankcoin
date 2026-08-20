@@ -18,7 +18,7 @@ const { keccak256 } = sha3;
 import anchor from '@coral-xyz/anchor';
 import { Connection, Keypair, PublicKey, SystemProgram } from '@solana/web3.js';
 
-const PROGRAM_ID = new PublicKey(process.env.FRANK_PROGRAM || '61yBp4FQSXq6qxS1Scny8LRBNDLDoNQBKupofVSyyHL8');
+const PROGRAM_ID = new PublicKey(process.env.FRANK_PROGRAM || 'FJu4SvyPdLYtCmRSgjZi3ShJvoyEPvjdC1MPhz44ngdF');
 const TOKEN = new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA');
 const ATA_PROG = new PublicKey('ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL');
 

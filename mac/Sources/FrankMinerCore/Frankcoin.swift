@@ -16,16 +16,14 @@ public struct ChainState {
 }
 
 public struct Frankcoin {
-    public static let programId = "61yBp4FQSXq6qxS1Scny8LRBNDLDoNQBKupofVSyyHL8"
+    public static let programId = "FJu4SvyPdLYtCmRSgjZi3ShJvoyEPvjdC1MPhz44ngdF"
     static let tokenProgram = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
     static let ataProgram = "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
     static let systemProgram = "11111111111111111111111111111111"
     static let oneFrank: Double = 1_000_000_000
-    // NOT a cap. frankcoin is uncapped: the reward
-    // halves across this distribution phase, then floors at a perpetual tail of
-    // 1 frank/proof, forever. Emission never stops.
-    static let distributionPhase: UInt64 = 1_000_000_000 * 1_000_000_000
-    static let tailReward: UInt64 = 1 * 1_000_000_000
+    // Hard cap: 5,000,000,000 franks. The reward halves across the cap and
+    // decays to zero at it — mining halts, fixed supply.
+    static let supplyCap: UInt64 = 5_000_000_000 * 1_000_000_000
 
     // First eight bytes of sha256("global:<name>"); fixed for the program's life.
     static let ixRegister: [UInt8] = [211, 124, 67, 15, 211, 194, 178, 240]
@@ -50,16 +48,21 @@ public struct Frankcoin {
                  program: Pubkey(base58: Frankcoin.ataProgram)!)!.0
     }
     /// What the next accepted proof pays. Mirrors reward_for() in the program:
-    /// halves each tranche across the distribution phase, then **floors at the
-    /// tail (1 frank) forever** — it never returns 0, because mining is uncapped.
+    /// halves each tranche across the cap, then **decays to zero at the cap** —
+    /// a fixed 5,000,000,000-frank supply. The last proof mints only the
+    /// remainder, so supply lands on the cap and never a frank over.
     public static func reward(forTotalMinted minted: UInt64) -> Double {
+        if minted >= supplyCap { return 0 }
         var reward: UInt64 = 500 * 1_000_000_000
         var lo: UInt64 = 0
-        var size = distributionPhase / 2
+        var size = supplyCap / 2
         while true {
-            if reward <= tailReward { return Double(tailReward) / oneFrank }
+            if reward == 0 { return 0 }
             let hi = lo &+ size
-            if minted < hi { return Double(reward) / oneFrank }
+            if minted < hi {
+                let remaining = supplyCap - minted
+                return Double(min(reward, remaining)) / oneFrank
+            }
             lo = hi
             size /= 2
             reward /= 2
@@ -79,12 +82,14 @@ public struct Frankcoin {
         var s = ChainState()
         guard let cfg = infos[0] else { return s }
         s.deployed = true
+        // Config layout: mint@10, total_minted@42, total_burned@50, genesis_ts@58,
+        // difficulty@66, cooldown@67, proofs_accepted@75.
         s.mint = Pubkey(Array(cfg[10..<42])).base58
         let minted = Frankcoin.u64(cfg, 42)
         s.totalMinted = Double(minted) / Frankcoin.oneFrank
-        s.difficulty = Int(cfg[58])
-        s.cooldown = Int64(bitPattern: Frankcoin.u64(cfg, 59))
-        s.proofsAccepted = Int(Frankcoin.u64(cfg, 67))
+        s.difficulty = Int(cfg[66])
+        s.cooldown = Int64(bitPattern: Frankcoin.u64(cfg, 67))
+        s.proofsAccepted = Int(Frankcoin.u64(cfg, 75))
         s.nextReward = Frankcoin.reward(forTotalMinted: minted)
         if infos.count > 1, let pr = infos[1] {
             s.registered = true

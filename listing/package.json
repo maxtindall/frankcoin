@@ -1,0 +1,12 @@
+{
+  "name": "frankcoin-listing",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Create a Raydium CPMM pool for frankcoin (mainnet). Dry-run by default.",
+  "dependencies": {
+    "@raydium-io/raydium-sdk-v2": "^0.1.0",
+    "@solana/web3.js": "^1.95.0",
+    "bn.js": "^5.2.1"
+  }
+}

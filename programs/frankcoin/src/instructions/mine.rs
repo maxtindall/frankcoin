@@ -7,8 +7,8 @@ use crate::{constants::*, error::FrankError, state::{Config, Proof}};
 
 /// The proof-of-work mint. A miner submits a nonce; the program verifies the
 /// hash meets difficulty, mints the full reward to the miner, and rolls the
-/// challenge forward so the same proof can never be reused. There is no levy and
-/// no treasury: frankcoin is a memecoin — every mined frank goes to the miner.
+/// challenge forward so the same proof can never be reused. No levy, no treasury:
+/// every mined frank goes to the miner. Mining halts forever at SUPPLY_CAP.
 #[derive(Accounts)]
 pub struct Mine<'info> {
     #[account(mut)]
@@ -44,8 +44,6 @@ pub struct Mine<'info> {
 pub fn handler(ctx: Context<Mine>, nonce: u64) -> Result<()> {
     let clock = Clock::get()?;
 
-    // Read the values we need before taking mutable borrows.
-    let paused = ctx.accounts.config.paused;
     let difficulty = ctx.accounts.config.difficulty;
     let cooldown = ctx.accounts.config.cooldown;
     let authority_bump = ctx.accounts.config.authority_bump;
@@ -53,18 +51,18 @@ pub fn handler(ctx: Context<Mine>, nonce: u64) -> Result<()> {
     let challenge = ctx.accounts.proof.challenge;
     let last_claim_ts = ctx.accounts.proof.last_claim_ts;
 
-    // 0. The General Secretary's emergency brake. Gates issuance only — it can never move a
-    //    balance, and clears the moment the General Secretary lifts it.
-    require!(!paused, FrankError::MiningPaused);
+    // 1. The cap. Once 5,000,000,000 franks are mined the reward is zero and
+    //    mining is over, permanently — fixed supply, like a memecoin should be.
+    let reward = reward_for(total_minted);
+    require!(reward > 0, FrankError::FullyMined);
 
-    // 1. Cooldown. There is no supply cap: mining never ends. The reward decays
-    //    across the distribution phase and then holds at a fixed tail forever.
+    // 2. Cooldown.
     require!(
         clock.unix_timestamp >= last_claim_ts.saturating_add(cooldown),
         FrankError::Cooldown
     );
 
-    // 2. Verify the proof: keccak(challenge || miner || nonce) meets difficulty.
+    // 3. Verify the proof: keccak(challenge || miner || nonce) meets difficulty.
     let hash = hashv(&[
         &challenge,
         ctx.accounts.miner.key().as_ref(),
@@ -75,11 +73,7 @@ pub fn handler(ctx: Context<Mine>, nonce: u64) -> Result<()> {
         FrankError::InsufficientDifficulty
     );
 
-    // 3. Reward for the current point on the emission curve. Never zero — past
-    //    the distribution phase it is exactly TAIL_REWARD. The whole reward is
-    //    the miner's: no levy, no treasury cut.
-    let reward = reward_for(total_minted);
-
+    // 4. Mint the whole reward to the miner.
     let signer: &[&[&[u8]]] = &[&[CONFIG_SEED, &[authority_bump]]];
     token::mint_to(
         CpiContext::new_with_signer(
@@ -94,25 +88,23 @@ pub fn handler(ctx: Context<Mine>, nonce: u64) -> Result<()> {
         reward,
     )?;
 
-    // 4. Update state.
+    // 5. Update state.
     let cfg = &mut ctx.accounts.config;
     cfg.total_minted = cfg.total_minted.checked_add(reward).ok_or(FrankError::Overflow)?;
     cfg.proofs_accepted = cfg.proofs_accepted.saturating_add(1);
 
-    // 4a. Difficulty retarget. Once a full window of proofs has been accepted,
-    //     compare how long it actually took against how long it *should* have
-    //     taken at the target pace, and nudge difficulty by one bit if the pace
-    //     is off by more than 2×. Never below the genesis floor, never above the
-    //     ceiling. The `> 0` guard makes a zeroed retarget window inert.
+    // 5a. Difficulty retarget: once a window of proofs has been accepted, nudge
+    //     difficulty ±1 bit if the pace is off target by more than 2×. Never below
+    //     the genesis floor, never above the ceiling.
     if cfg.retarget_interval > 0
         && cfg.proofs_accepted.saturating_sub(cfg.window_start_proofs) >= cfg.retarget_interval
     {
         let elapsed = clock.unix_timestamp.saturating_sub(cfg.window_start_ts).max(0);
         let expected = cfg.target_interval.saturating_mul(cfg.retarget_interval as i64);
         if elapsed.saturating_mul(2) < expected && cfg.difficulty < MAX_DIFFICULTY {
-            cfg.difficulty += 1; // proofs coming too fast -> raise difficulty
+            cfg.difficulty += 1;
         } else if elapsed > expected.saturating_mul(2) && cfg.difficulty > cfg.min_difficulty {
-            cfg.difficulty -= 1; // proofs coming too slow -> lower difficulty
+            cfg.difficulty -= 1;
         }
         cfg.window_start_ts = clock.unix_timestamp;
         cfg.window_start_proofs = cfg.proofs_accepted;
@@ -123,7 +115,7 @@ pub fn handler(ctx: Context<Mine>, nonce: u64) -> Result<()> {
     proof.total_mined = proof.total_mined.checked_add(reward).ok_or(FrankError::Overflow)?;
     proof.count = proof.count.saturating_add(1);
 
-    // 5. Roll the challenge forward: anti-replay and anti-precompute.
+    // 6. Roll the challenge forward: anti-replay and anti-precompute.
     proof.challenge = hashv(&[
         &challenge,
         &nonce.to_le_bytes(),
@@ -148,21 +140,25 @@ fn leading_zero_bits(hash: &[u8; 32]) -> u32 {
 }
 
 /// The emission curve. Starts at INITIAL_REWARD (500 franks) and halves once per
-/// supply tranche across the distribution phase — tranche 0 spans the first 500M
-/// franks at 500/proof, tranche 1 the next 250M at 250/proof, and so on — then
-/// **floors at TAIL_REWARD and stays there forever**. It never returns zero, so
-/// mining is uncapped.
+/// supply tranche across the cap — tranche 0 spans the first half of the cap at
+/// 500/proof, tranche 1 the next quarter at 250, and so on — decaying to **zero
+/// at SUPPLY_CAP**. The last proof mints only what remains, so supply lands
+/// exactly on the cap and never a frank over.
 pub fn reward_for(total_minted: u64) -> u64 {
+    if total_minted >= SUPPLY_CAP {
+        return 0;
+    }
     let mut reward = INITIAL_REWARD;
     let mut lo: u64 = 0;
-    let mut size: u64 = DISTRIBUTION_PHASE / 2; // tranche 0 spans the first 500M
+    let mut size: u64 = SUPPLY_CAP / 2; // tranche 0 spans the first half of the cap
     loop {
-        if reward <= TAIL_REWARD {
-            return TAIL_REWARD; // perpetual tail — emission never stops
+        if reward == 0 {
+            return 0;
         }
         let hi = lo.saturating_add(size);
         if total_minted < hi {
-            return reward;
+            let remaining = SUPPLY_CAP - total_minted;
+            return reward.min(remaining); // never mint past the cap
         }
         lo = hi;
         size /= 2;
@@ -177,34 +173,32 @@ mod reward_tests {
     #[test]
     fn genesis_reward_is_500_frank() {
         assert_eq!(reward_for(0), INITIAL_REWARD);
-        assert_eq!(reward_for(DISTRIBUTION_PHASE / 2 - 1), INITIAL_REWARD);
+        assert_eq!(reward_for(SUPPLY_CAP / 2 - ONE_FRANK), INITIAL_REWARD);
     }
 
     #[test]
     fn reward_halves_each_tranche() {
-        assert_eq!(reward_for(DISTRIBUTION_PHASE / 2), INITIAL_REWARD / 2);
-        assert_eq!(reward_for(DISTRIBUTION_PHASE / 2 + DISTRIBUTION_PHASE / 4), INITIAL_REWARD / 4);
+        assert_eq!(reward_for(SUPPLY_CAP / 2), INITIAL_REWARD / 2);
+        assert_eq!(reward_for(SUPPLY_CAP / 2 + SUPPLY_CAP / 4), INITIAL_REWARD / 4);
     }
 
     #[test]
-    fn emission_is_uncapped_and_floors_at_tail() {
-        assert_eq!(reward_for(DISTRIBUTION_PHASE.saturating_mul(4)), TAIL_REWARD);
-        assert_eq!(reward_for(u64::MAX / 2), TAIL_REWARD);
-        assert!(reward_for(u64::MAX / 2) > 0);
+    fn emission_is_capped_and_stops() {
+        assert_eq!(reward_for(SUPPLY_CAP), 0);
+        assert_eq!(reward_for(SUPPLY_CAP + ONE_FRANK), 0);
+        assert_eq!(reward_for(u64::MAX / 2), 0);
     }
 
     #[test]
-    fn reward_is_monotonic_down_to_the_tail() {
-        let mut prev = u64::MAX;
-        let mut total = 0u64;
-        for _ in 0..64 {
-            let r = reward_for(total);
-            assert!(r >= TAIL_REWARD, "dropped below tail at {}", total);
-            assert!(r <= prev, "reward increased at {}", total);
-            prev = r;
-            total = total.saturating_add(DISTRIBUTION_PHASE / 8);
+    fn supply_never_exceeds_the_cap() {
+        // The core invariant: from any point, minting the current reward never
+        // carries total supply past the cap. (Emission decays to zero a hair
+        // under the cap, so it lands just below and never a frank over.)
+        for &t in &[0u64, SUPPLY_CAP / 2, SUPPLY_CAP * 3 / 4, SUPPLY_CAP - ONE_FRANK, SUPPLY_CAP - 1] {
+            let r = reward_for(t);
+            assert!(t.saturating_add(r) <= SUPPLY_CAP, "overshoot at {}", t);
         }
-        assert_eq!(reward_for(total), TAIL_REWARD);
+        assert_eq!(reward_for(SUPPLY_CAP), 0);
     }
 
     #[test]

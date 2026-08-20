@@ -7,60 +7,38 @@ pub const DECIMALS: u8 = 9;
 /// Base units in one frank: 10^9.
 pub const ONE_FRANK: u64 = 1_000_000_000;
 
-/// The size of the distribution phase, in base units (1,000,000,000 franks).
-/// This is NOT a cap — mining never stops. It only shapes the halving schedule:
-/// the reward halves across tranches that together span this much supply, after
-/// which emission settles to a perpetual tail. Roughly a billion franks are
-/// issued on the steep part of the curve; then issuance continues forever at
-/// TAIL_REWARD.
-pub const DISTRIBUTION_PHASE: u64 = 1_000_000_000 * ONE_FRANK;
+/// The hard cap: **5,000,000,000 franks**, ever. frankcoin is a memecoin now —
+/// fixed supply, so it can be priced and traded without endless dilution.
+/// Mining is a race to this cap: once `total_minted` reaches it, the reward is
+/// zero and `mine` refuses. No tail, no perpetual emission, no exceptions.
+pub const SUPPLY_CAP: u64 = 5_000_000_000 * ONE_FRANK;
 
-/// Genesis reward per accepted proof, in base units (500 franks). Halves each
-/// supply tranche across the distribution phase, then floors at TAIL_REWARD.
+/// Genesis reward per accepted proof (500 franks). Halves once per supply tranche
+/// across the cap — tranche 0 spans the first half of the cap at 500/proof,
+/// tranche 1 the next quarter at 250, and so on — decaying to zero exactly as the
+/// cap is reached. No pre-mine and no team allocation: every frank is mined.
+///
+/// This is the one knob that sets how fast the 5B distributes. At the retarget
+/// target of one proof/minute the early reward pays 500 franks/proof; raise this
+/// (or lower TARGET_INTERVAL_SECS) to distribute faster, lower it to distribute
+/// slower. Trading does not wait on full distribution — a Raydium pool is seeded
+/// at launch — so this only shapes the mining race, not liquidity.
 pub const INITIAL_REWARD: u64 = 500 * ONE_FRANK;
 
-/// The perpetual tail: once the halving schedule decays to it, every accepted
-/// proof mints exactly this much — 1 frank — forever. Emission never stops, but
-/// because the tail is a *fixed absolute* amount, percentage inflation falls
-/// toward zero as total supply grows (Monero's model). This is what lets an
-/// uncapped memecoin stay sound: asymptotically-zero inflation plus a
-/// proof-of-work production cost under the price.
-pub const TAIL_REWARD: u64 = 1 * ONE_FRANK;
-
 // ---- Difficulty retargeting -------------------------------------------------
-// Difficulty floats toward a target issuance *pace*, so franks are minted on a
-// predictable schedule regardless of how much hashpower shows up, and the
-// marginal cost to produce one rises as miners compete.
+// Difficulty floats toward a target issuance *pace*, so franks mint on a
+// predictable schedule regardless of hashpower, and the marginal cost to produce
+// one rises as miners compete.
 
-/// Target seconds between accepted proofs, network-wide. Retargeting nudges
-/// difficulty so the observed pace tracks this.
+/// Target seconds between accepted proofs, network-wide.
 pub const TARGET_INTERVAL_SECS: i64 = 60;
 
 /// Retarget every this many accepted proofs (one difficulty-adjustment window).
 pub const RETARGET_INTERVAL: u64 = 20;
 
-/// Difficulty moves by at most ±1 bit per window, and only when the observed
-/// pace is off target by more than 2×, so it can't oscillate wildly. It never
-/// falls below the genesis difficulty (stored as `min_difficulty`) and never
-/// rises past this ceiling (a valid nonce stays findable within a u64).
+/// Difficulty moves at most ±1 bit per window, never below the genesis floor,
+/// never above this ceiling (a valid nonce stays findable within a u64).
 pub const MAX_DIFFICULTY: u8 = 56;
-
-// ---- The General Secretary's bounded dials -----------------------------------------------
-// The General Secretary may tune the mine's *pace*, never its money. These bounds
-// are hard-coded so no General Secretary — however capricious — can brick mining or turn the
-// dials into a covert emission lever. The Council of code binds the General Secretary.
-
-/// A General Secretary-set cooldown must fall within [MIN_COOLDOWN, MAX_COOLDOWN] seconds.
-pub const MIN_COOLDOWN: i64 = 0;
-pub const MAX_COOLDOWN: i64 = 24 * 60 * 60; // one day
-
-/// A General Secretary-set target interval must fall within these bounds (seconds/proof).
-pub const MIN_TARGET_INTERVAL: i64 = 1;
-pub const MAX_TARGET_INTERVAL: i64 = 60 * 60; // one hour
-
-/// A General Secretary-set retarget window must fall within these bounds (proofs).
-pub const MIN_RETARGET_INTERVAL: u64 = 1;
-pub const MAX_RETARGET_INTERVAL: u64 = 10_000;
 
 // PDA seeds
 pub const CONFIG_SEED: &[u8] = b"config";
@@ -68,6 +46,6 @@ pub const MINT_SEED: &[u8] = b"mint";
 pub const PROOF_SEED: &[u8] = b"proof";
 
 /// Unused tail on every Proof account. Rent on this is the cost of an extra
-/// mining identity — the only defence against one fast machine farming many
-/// wallets. Roughly 0.0157 SOL per registration at current rent rates.
+/// mining identity — the only defence against one machine farming many wallets.
+/// Roughly 0.0157 SOL per registration at current rent rates.
 pub const SYBIL_BOND: usize = 900;

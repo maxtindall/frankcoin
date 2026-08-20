@@ -8,16 +8,10 @@ pub enum FrankError {
     Cooldown,
     #[msg("arithmetic overflow")]
     Overflow,
-    #[msg("only the sitting General Secretary may perform this act")]
-    NotTheSecretary,
-    #[msg("the one-time genesis mint has already been performed; franks are now proof-of-work only")]
-    GenesisAlreadyMinted,
-    #[msg("mining is paused by the General Secretary")]
-    MiningPaused,
-    #[msg("that parameter is outside the bounds the code permits the General Secretary")]
-    ParamOutOfBounds,
-    #[msg("only the program's upgrade authority may migrate the config")]
+    #[msg("frankcoin is fully mined — the 5,000,000,000 cap is reached, and there will be no more")]
+    FullyMined,
+    #[msg("only the program's upgrade authority may set token metadata")]
     NotUpgradeAuthority,
-    #[msg("the config account is already migrated to the current layout")]
-    AlreadyMigrated,
+    #[msg("you cannot burn more than you hold")]
+    InsufficientBalance,
 }

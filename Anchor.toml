@@ -6,10 +6,10 @@ resolution = true
 skip-lint = false
 
 [programs.localnet]
-frankcoin = "61yBp4FQSXq6qxS1Scny8LRBNDLDoNQBKupofVSyyHL8"
+frankcoin = "FJu4SvyPdLYtCmRSgjZi3ShJvoyEPvjdC1MPhz44ngdF"
 
 [programs.devnet]
-frankcoin = "61yBp4FQSXq6qxS1Scny8LRBNDLDoNQBKupofVSyyHL8"
+frankcoin = "FJu4SvyPdLYtCmRSgjZi3ShJvoyEPvjdC1MPhz44ngdF"
 
 [provider]
 cluster = "devnet"
